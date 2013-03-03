@@ -2,28 +2,95 @@
 <HTML>
   <HEAD>
   </HEAD>
-  <BODY id="body">  
-    <image id="testImg" src="images\man.bmp" style="display:none">
+  <BODY id="body" onload="init()">  
+    <script src="lib\\easeljs-0.6.0.min.js"></script>
     <script>
-      var CANVAS_WIDTH = 640;
-      var CANVAS_HEIGHT = 640;
+      var WIDTH = 640;
+      var HEIGHT = 640;
+
+      var KEYCODE_ENTER = 13;   //usefull keycode
+      var KEYCODE_SPACE = 32;   //usefull keycode
+      var KEYCODE_UP = 38;    //usefull keycode
+      var KEYCODE_LEFT = 37;    //usefull keycode
+      var KEYCODE_RIGHT = 39;   //usefull keycode
+      var KEYCODE_DOWN = 40; 
+      var KEYCODE_W = 87;     //usefull keycode
+      var KEYCODE_A = 65;     //usefull keycode
+      var KEYCODE_D = 68;     //usefull keycode
+      var KEYCODE_S = 83;     //usefull keycode
+
+
+      var shootHeld;      //is the user holding a shoot command
+      var lfHeld;       //is the user holding a turn left command
+      var rtHeld;       //is the user holding a turn right command
+      var fwdHeld;      //is the user holding a forward command
+      var bwdHeld;      //is the user holding a backward command
+
+      var USER_SPEED = 5;
 
       var body = document.getElementById("body");
-      var canvas = document.createElement("canvas");
 
-      var ctx = canvas.getContext("2d");
-      
-      canvas.width = CANVAS_WIDTH;
-      canvas.height = CANVAS_HEIGHT;
-      canvas.id = "canvas";
-      body.appendChild(canvas);
-      
-      var img = new Image();
-      img.onload = function(){        
-        ctx.drawImage(this, 100, 100, 100, 100);
+      document.onkeydown = handleKeyDown;
+      document.onkeyup = handleKeyUp;
+
+
+      function init(){
+        var canvas = document.createElement("canvas");
+
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        canvas.id = "gameCanvas";
+        body.appendChild(canvas);
+
+        var stage = new createjs.Stage("gameCanvas");
+        var image = new createjs.Bitmap("images\\man.bmp");
+        stage.addChild(image);
+        console.log(image);
+        createjs.Ticker.addEventListener("tick", handleTick);
+        function handleTick(event) {
+          if(lfHeld) image.x -= USER_SPEED;
+          if(rtHeld) image.x += USER_SPEED;
+          if(fwdHeld) image.y -= USER_SPEED;
+          if(bwdHeld) image.y += USER_SPEED;
+
+          stage.update();
+        }
       }
-      img.src = "images\\man.bmp";
-      
+
+      function handleKeyDown(e) {
+        //cross browser issues exist
+        if(!e){ var e = window.event; }
+        switch(e.keyCode) {
+          case KEYCODE_SPACE: shootHeld = true; return false;
+          case KEYCODE_A:
+          case KEYCODE_LEFT:  lfHeld = true; return false;
+          case KEYCODE_D:
+          case KEYCODE_RIGHT: rtHeld = true; return false;
+          case KEYCODE_W:
+          case KEYCODE_UP:  fwdHeld = true; return false;
+          case KEYCODE_S:
+          case KEYCODE_DOWN:  bwdHeld = true; return false;
+          case KEYCODE_ENTER:  if(canvas.onclick == handleClick){ handleClick(); }return false;
+        }
+      }
+
+      function handleKeyUp(e) {
+        //cross browser issues exist
+        if(!e){ var e = window.event; }
+        switch(e.keyCode) {
+          case KEYCODE_SPACE: shootHeld = false; break;
+          case KEYCODE_A:
+          case KEYCODE_LEFT:  lfHeld = false; break;
+          case KEYCODE_D:
+          case KEYCODE_RIGHT: rtHeld = false; break;
+          case KEYCODE_W:
+          case KEYCODE_UP:  fwdHeld = false; break;
+          case KEYCODE_S:
+          case KEYCODE_DOWN:  bwdHeld = false; break;          
+        }
+      }
+
+
     </script>  
   </BODY>
 </HTML>

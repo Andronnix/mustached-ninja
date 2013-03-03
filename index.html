@@ -10,6 +10,7 @@
 
       var body = document.getElementById("body");
       var canvas = document.createElement("canvas");
+
       var ctx = canvas.getContext("2d");
       
       canvas.width = CANVAS_WIDTH;
@@ -17,9 +18,8 @@
       canvas.id = "canvas";
       body.appendChild(canvas);
       
-      
       var img = new Image();
-      img.onload = function(){
+      img.onload = function(){        
         ctx.drawImage(this, 100, 100, 100, 100);
       }
       img.src = "images\\man.bmp";

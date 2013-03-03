@@ -3,16 +3,27 @@
   <HEAD>
   </HEAD>
   <BODY id="body">  
+    <image id="testImg" src="images\man.bmp" style="display:none">
     <script>
       var CANVAS_WIDTH = 640;
       var CANVAS_HEIGHT = 640;
 
       var body = document.getElementById("body");
       var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+      
       canvas.width = CANVAS_WIDTH;
       canvas.height = CANVAS_HEIGHT;
       canvas.id = "canvas";
       body.appendChild(canvas);
+      
+      
+      var img = new Image();
+      img.onload = function(){
+        ctx.drawImage(this, 100, 100, 100, 100);
+      }
+      img.src = "images\\man.bmp";
+      
     </script>  
   </BODY>
 </HTML>

@@ -7,6 +7,7 @@
     <script>
       var WIDTH = 640;
       var HEIGHT = 640;
+      var USER_SPEED = 5;
 
       var KEYCODE_ENTER = 13;   //usefull keycode
       var KEYCODE_SPACE = 32;   //usefull keycode
@@ -26,12 +27,12 @@
       var fwdHeld;      //is the user holding a forward command
       var bwdHeld;      //is the user holding a backward command
 
-      var USER_SPEED = 5;
-
       var body = document.getElementById("body");
+      var stage;
 
       document.onkeydown = handleKeyDown;
       document.onkeyup = handleKeyUp;
+      document.mousemove = handleMouseMove;
 
 
       function init(){
@@ -42,9 +43,13 @@
         canvas.id = "gameCanvas";
         body.appendChild(canvas);
 
-        var stage = new createjs.Stage("gameCanvas");
+        stage = new createjs.Stage("gameCanvas");
         var image = new createjs.Bitmap("images\\man.bmp");
+        image.regX = image.image.width /2;
+        image.regY = image.image.height /2;
         stage.addChild(image);
+
+
         console.log(image);
         createjs.Ticker.addEventListener("tick", handleTick);
         function handleTick(event) {
@@ -53,10 +58,11 @@
           if(fwdHeld) image.y -= USER_SPEED;
           if(bwdHeld) image.y += USER_SPEED;
 
+          var a = Math.atan2(stage.mouseY - image.y,stage.mouseX - image.x);
+          image.rotation = 180 * a / Math.PI + 90;
           stage.update();
         }
       }
-
       function handleKeyDown(e) {
         //cross browser issues exist
         if(!e){ var e = window.event; }

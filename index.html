@@ -32,7 +32,6 @@
 
       document.onkeydown = handleKeyDown;
       document.onkeyup = handleKeyUp;
-      document.mousemove = handleMouseMove;
 
 
       function init(){
@@ -45,21 +44,64 @@
 
         stage = new createjs.Stage("gameCanvas");
         var image = new createjs.Bitmap("images\\man.bmp");
+
+        var DEBUG_FIELD = new createjs.Text("Test");
+        var DEBUG_SHAPE = new createjs.Shape();
+
+        DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; 
+        DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
+        stage.addChild(DEBUG_FIELD);
+
+        stage.addChild(DEBUG_SHAPE);
+
         image.regX = image.image.width /2;
         image.regY = image.image.height /2;
+        image.x = WIDTH / 2;
+        image.y = HEIGHT / 2;
         stage.addChild(image);
 
 
-        console.log(image);
+
+
+        stage.swapChildren(DEBUG_FIELD, image);
+
         createjs.Ticker.addEventListener("tick", handleTick);
         function handleTick(event) {
-          if(lfHeld) image.x -= USER_SPEED;
-          if(rtHeld) image.x += USER_SPEED;
-          if(fwdHeld) image.y -= USER_SPEED;
-          if(bwdHeld) image.y += USER_SPEED;
 
-          var a = Math.atan2(stage.mouseY - image.y,stage.mouseX - image.x);
-          image.rotation = 180 * a / Math.PI + 90;
+
+          var a = Math.atan2(stage.mouseY - image.y, stage.mouseX - image.x) + Math.PI / 2;
+          image.rotation = 180 * a / Math.PI;
+
+          DEBUG_FIELD.text = image.rotation;
+
+          // player speed vector
+          var v = {x:0, y:0};
+
+          if(lfHeld) v.x = - USER_SPEED;
+          if(rtHeld) v.x = USER_SPEED;
+          if(fwdHeld) v.y = - USER_SPEED;
+          if(bwdHeld) v.y = USER_SPEED;
+
+          var x0 = v.x;
+
+          v.x = v.x * Math.cos(a) - v.y * Math.sin(a);
+          v.y = x0 * Math.sin(a) + v.y * Math.cos(a);  
+
+
+          /*DEBUG_SHAPE.graphics.clear();
+          
+          DEBUG_SHAPE.graphics.beginStroke("#f00").mt(0,0).lt(v.x * 10, 0);
+          DEBUG_SHAPE.graphics.beginStroke("#0f0").mt(0,0).lt(0, 10 * v.y);
+          DEBUG_SHAPE.graphics.beginStroke("#00f").mt(0,0).lt(10 * v.x, 10 * v.y);*/
+
+
+
+          image.x += v.x;
+          image.y += v.y;
+
+
+          // DEBUG_SHAPE.x = image.x; DEBUG_SHAPE.y = image.y; 
+
           stage.update();
         }
       }

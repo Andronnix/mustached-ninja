@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<HTML>
+  <HEAD>
+  </HEAD>
+  <BODY id="body" onload="init()">  
+    <script src="lib\\easeljs-0.6.0.min.js"></script>
+    <script>
+      var WIDTH = 500;
+      var HEIGHT = 500;
+      var body = document.getElementById("body");
+      var stage;
+      var data;
+      //var grant;
+
+      function init(){
+        var canvas = document.createElement("canvas");
+
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        canvas.id = "gameCanvas";
+        body.appendChild(canvas);
+
+
+        stage = new createjs.Stage("gameCanvas");
+        
+      }
+      function start () {
+        stage.removeAllChildren();
+        data = {
+          "animations": {
+            "run": [0, 7, "run"]
+          },
+          "images": [document.getElementById("animationURI").value],
+          "images": ["images/Hero.png"],
+
+          "frames": {
+            "width": 32,
+            "height": 32,
+            "regX" : 0,
+            "regY" : 0,
+            "count": 8          
+          }
+        }
+        var ss = new createjs.SpriteSheet(data);
+
+
+
+        var grant = new createjs.BitmapAnimation(ss);
+        grant.x = 10;
+        grant.y = 10;
+
+        grant.gotoAndPlay("run");
+
+        // Add Grant to the stage, and add it as a listener to Ticker to get updates each frame.
+        stage.addChild(grant);        
+        createjs.Ticker.addEventListener("tick", function (evt){
+          stage.update();
+        });
+        createjs.Ticker.setFPS(20);
+      }
+    </script>  
+
+    <form action="javascript:start();">
+      Image URI: <input type="text" id="animationURI">
+      <input type="submit" value="Start">
+    <form>
+  </BODY>
+</HTML>

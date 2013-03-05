@@ -65,6 +65,8 @@
 
         stage.swapChildren(DEBUG_FIELD, image);
 
+
+        createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", handleTick);
         function handleTick(event) {
 

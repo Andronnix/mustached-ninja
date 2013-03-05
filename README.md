@@ -2,11 +2,16 @@ mustached-ninja
 ===============
 Epic HTML 5 game!
 
-EeaselJS http://www.createjs.com/#!/EaselJS
-Tiled Map Editor http://www.mapeditor.org/
-Pyxel Edit http://pyxeledit.com/beta.php
-Texture Packer http://www.codeandweb.com/texturepacker
-Zoё (преобразование swf в анимацию для EaselJS) http://www.createjs.com/#!/Zoe
+EeaselJS http://www.createjs.com/#!/EaselJS 
+
+Tiled Map Editor http://www.mapeditor.org/ 
+
+Pyxel Edit http://pyxeledit.com/beta.php 
+
+Texture Packer http://www.codeandweb.com/texturepacker 
+
+Zoё (преобразование swf в анимацию для EaselJS) http://www.createjs.com/#!/Zoe 
+
 
  - [ ] Загрузка карты
 	 - [ ] Разработать формат хранения карты

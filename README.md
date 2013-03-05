@@ -3,6 +3,9 @@ mustached-ninja
 Epic HTML 5 game!
 
 EeaselJS http://www.createjs.com/#!/EaselJS
+Tiled Map Editor http://www.mapeditor.org/
+Pyxel Edit http://pyxeledit.com/beta.php
+Texture Packer http://www.codeandweb.com/texturepacker
 
  - [ ] Загрузка карты
 	 - [ ] Разработать формат хранения карты

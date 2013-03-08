@@ -27,7 +27,7 @@
       var DEBUG_SHAPE; 
 
 
-      var shootHeld;      //is the user holding a shoot command
+      var shootHeld;    //is the user holding a shoot command
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
       var fwdHeld;      //is the user holding a forward command
@@ -35,10 +35,12 @@
 
       var body = document.getElementById("body");
       var stage;
+      var player;
 
       document.onkeydown = handleKeyDown;
       document.onkeyup = handleKeyUp;
 
+      //re
       function xhrGet(reqUri, context, callback) {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", reqUri, false);
@@ -51,8 +53,8 @@
       }
 
 
-      function Player(){
-        this.speed = 5;
+      function Zombie(){
+        this.speed = 1.5;
 
         this.animationJSON = null;
         this.animation = null;
@@ -81,7 +83,54 @@
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
         }
+        function hunt () {
+          //Just follow to the player
+          var a = Math.atan2(this.animation.y - player.animation.y, this.animation.x - player.animation.x) + Math.PI;
 
+          this.animation.rotation = 180 * a / Math.PI + 90;
+
+          var v = {x: 0, y: 0};
+          v.x = this.speed * Math.cos(a); 
+          v.y = this.speed * Math.sin(a);
+
+          this.move(v.x, v.y);
+        }
+        xhrGet("\json\\Zombie.json", this, this.loadJSON);
+
+        var ZZ = this;//TODO ГОВНОКОД
+        createjs.Ticker.addEventListener("tick", function(){hunt.call(ZZ);});
+      }
+
+      function Player(){
+        this.speed = 3;
+
+        this.animationJSON = null;
+        this.animation = null;
+
+        this.moveTo = function(x, y){
+          this.animation.x = x;
+          this.animation.y = y;
+        }
+        this.move = function(dx, dy){
+          this.animation.x += dx;
+          this.animation.y += dy;
+        }
+        this.rotate = function(alpha){
+          this.animation.rotation = alpha;
+        }
+        this.show = function(){
+          stage.addChild(this.animation);
+        }
+        this.loadJSON = function(data){
+          this.animationJSON = JSON.parse(data.responseText);    
+          var ss = new createjs.SpriteSheet(this.animationJSON);             
+          this.animation = new createjs.BitmapAnimation(ss);   
+          this.animate("run");
+          this.show();
+        }
+        this.animate = function(arg){
+          this.animation.gotoAndPlay(arg);    
+        }
         xhrGet("\json\\Hero.json", this, this.loadJSON);
       }
       
@@ -102,7 +151,11 @@
         DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
         stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
 
-        var player = new Player();
+        player = new Player();
+        for(var i=0;i<10;i++){
+          var z = new Zombie();
+          z.moveTo(Math.random() * WIDTH, Math.random() * HEIGHT);
+        }
 
         player.animation.x = WIDTH / 2;
         player.animation.y = HEIGHT / 2;
@@ -124,10 +177,10 @@
 
           var v = {x:0, y:0};  // player speed vector
 
-          if(lfHeld) v.x = - USER_SPEED;
-          if(rtHeld) v.x = USER_SPEED;
-          if(fwdHeld) v.y = - USER_SPEED;
-          if(bwdHeld) v.y = USER_SPEED;
+          if(lfHeld) v.x = - player.speed;
+          if(rtHeld) v.x = player.speed;
+          if(fwdHeld) v.y = - player.speed;
+          if(bwdHeld) v.y = player.speed;
 
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");

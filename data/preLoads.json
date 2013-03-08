@@ -1,0 +1,19 @@
+[	
+	{
+		"name" : "hero",
+		"src" : "images\\hero.png"
+	},
+	{
+		"name" : "zombie",
+		"src" : "images\\zombie.png"
+	},
+	{
+		"name" : "heroJSON",
+		"src" : "data\\hero.json"
+	},
+	{
+		"name" : "zombieJSON",
+		"src" : "data\\zombie.json"
+	}
+
+]

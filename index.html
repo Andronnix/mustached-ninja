@@ -4,10 +4,12 @@
   </HEAD>
   <BODY id="body" onload="init()">  
     <script src="lib\\easeljs-0.6.0.min.js"></script>
+    <script src="scripts\\mapLoader.js"></script>
     <script>
       var WIDTH = 640;
       var HEIGHT = 640;
       var USER_SPEED = 5;
+      var BULLET_SPEED = 8 * USER_SPEED; //Константа из головы
 
       var KEYCODE_ENTER = 13;   //usefull keycode
       var KEYCODE_SPACE = 32;   //usefull keycode
@@ -19,6 +21,10 @@
       var KEYCODE_A = 65;     //usefull keycode
       var KEYCODE_D = 68;     //usefull keycode
       var KEYCODE_S = 83;     //usefull keycode
+
+
+      var DEBUG_FIELD;
+      var DEBUG_SHAPE; 
 
 
       var shootHeld;      //is the user holding a shoot command
@@ -33,7 +39,51 @@
       document.onkeydown = handleKeyDown;
       document.onkeyup = handleKeyUp;
 
+      function xhrGet(reqUri, context, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", reqUri, false);
+        xhr.onreadystatechange = function(){
+          if(xhr.readyState == 4){
+            callback.call(context, xhr);
+          }
+        }
+        xhr.send();
+      }
 
+
+      function Player(){
+        this.speed = 5;
+
+        this.animationJSON = null;
+        this.animation = null;
+
+        this.moveTo = function(x, y){
+          this.animation.x = x;
+          this.animation.y = y;
+        }
+        this.move = function(dx, dy){
+          this.animation.x += dx;
+          this.animation.y += dy;
+        }
+        this.rotate = function(alpha){
+          this.animation.rotation = alpha;
+        }
+        this.show = function(){
+          stage.addChild(this.animation);
+        }
+        this.loadJSON = function(data){
+          this.animationJSON = JSON.parse(data.responseText);    
+          var ss = new createjs.SpriteSheet(this.animationJSON);             
+          this.animation = new createjs.BitmapAnimation(ss);   
+          this.animate("run");
+          this.show();
+        }
+        this.animate = function(arg){
+          this.animation.gotoAndPlay(arg);    
+        }
+
+        xhrGet("\json\\Hero.json", this, this.loadJSON);
+      }
       
 
       function init(){
@@ -45,71 +95,63 @@
         body.appendChild(canvas);
 
         stage = new createjs.Stage("gameCanvas");
-        var image = new createjs.Bitmap("images\\man.bmp");
 
-        var DEBUG_FIELD = new createjs.Text("Test");
-        var DEBUG_SHAPE = new createjs.Shape();
+        DEBUG_FIELD = new createjs.Text("Test");
+        DEBUG_SHAPE = new createjs.Shape();
 
-        DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; 
-        DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
-        stage.addChild(DEBUG_FIELD);
+        DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
+        stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
 
-        stage.addChild(DEBUG_SHAPE);
+        var player = new Player();
 
-        image.regX = image.image.width /2;
-        image.regY = image.image.height /2;
-        image.x = WIDTH / 2;
-        image.y = HEIGHT / 2;
-        stage.addChild(image);
-
-
-
-
-        stage.swapChildren(DEBUG_FIELD, image);
+        player.animation.x = WIDTH / 2;
+        player.animation.y = HEIGHT / 2;
 
 
         createjs.Ticker.setFPS(60);
+        createjs.Ticker.addEventListener("tick", function(){
+          stage.update();
+        });
+                
         createjs.Ticker.addEventListener("tick", handleTick);
         function handleTick(event) {
 
+          var a = Math.atan2(stage.mouseY - player.animation.y, stage.mouseX - player.animation.x) + Math.PI / 2;
 
-          var a = Math.atan2(stage.mouseY - image.y, stage.mouseX - image.x) + Math.PI / 2;
-          image.rotation = 180 * a / Math.PI;
+          player.animation.rotation = 180 * a / Math.PI;
 
-          DEBUG_FIELD.text = image.rotation;
+          // DEBUG_FIELD.text = image.rotation;
 
-          // player speed vector
-          var v = {x:0, y:0};
+          var v = {x:0, y:0};  // player speed vector
 
           if(lfHeld) v.x = - USER_SPEED;
           if(rtHeld) v.x = USER_SPEED;
           if(fwdHeld) v.y = - USER_SPEED;
           if(bwdHeld) v.y = USER_SPEED;
 
+          if(v.x * v.x + v.y * v.y == 0){
+            player.animate("stay");
+          }else{
+            if(player.animation.currentAnimation != "run")
+              player.animate("run");
+          }
           var x0 = v.x;
 
           v.x = v.x * Math.cos(a) - v.y * Math.sin(a);
           v.y = x0 * Math.sin(a) + v.y * Math.cos(a);  
 
-
+          player.move(v.x, v.y);
           /*DEBUG_SHAPE.graphics.clear();
           
           DEBUG_SHAPE.graphics.beginStroke("#f00").mt(0,0).lt(v.x * 10, 0);
           DEBUG_SHAPE.graphics.beginStroke("#0f0").mt(0,0).lt(0, 10 * v.y);
-          DEBUG_SHAPE.graphics.beginStroke("#00f").mt(0,0).lt(10 * v.x, 10 * v.y);*/
-
-
-
-          image.x += v.x;
-          image.y += v.y;
-
-
-          // DEBUG_SHAPE.x = image.x; DEBUG_SHAPE.y = image.y; 
-
-          stage.update();
+          DEBUG_SHAPE.graphics.beginStroke("#00f").mt(0,0).lt(10 * v.x, 10 * v.y);
+          DEBUG_SHAPE.x = image.x; DEBUG_SHAPE.y = image.y; */
         }
+
       }
       
+
       function handleKeyDown(e) {
         //cross browser issues exist
         if(!e){ var e = window.event; }
@@ -123,7 +165,6 @@
           case KEYCODE_UP:  fwdHeld = true; return false;
           case KEYCODE_S:
           case KEYCODE_DOWN:  bwdHeld = true; return false;
-          case KEYCODE_ENTER:  if(canvas.onclick == handleClick){ handleClick(); }return false;
         }
       }
 

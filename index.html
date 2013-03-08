@@ -2,8 +2,9 @@
 <HTML>
   <HEAD>
   </HEAD>
-  <BODY id="body" onload="init()">  
+  <BODY id="body">  
     <script src="lib\\easeljs-0.6.0.min.js"></script>
+	<script src="lib\\preloadjs-0.3.0.min.js"></script>
     <script>
       var WIDTH = 640;
       var HEIGHT = 640;
@@ -20,7 +21,6 @@
       var KEYCODE_D = 68;     //usefull keycode
       var KEYCODE_S = 83;     //usefull keycode
 
-
       var shootHeld;      //is the user holding a shoot command
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
@@ -32,11 +32,28 @@
 
       document.onkeydown = handleKeyDown;
       document.onkeyup = handleKeyUp;
+	  var xhr = new XMLHttpRequest();
+	  
+	  var preLoads;
+	  xhr.open("GET", "data\\preLoads.json", false); //we load all src links into 'preLoads'
+	  xhr.onload = function(){
+		preLoads = JSON.parse(this.responseText);
+	  };
+	  xhr.send();
+	  
+	  var queue = new createjs.LoadQueue();
+	  queue.addEventListener("complete", handleComplete);
+	  
+	  function handleComplete(event){ //check if all files in 'queue' are loaded
+		//console.log("comlete!");
+		//console.log(queue.getResult("hero"));
+		init();
+	  }
+	  for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads.json'
+		queue.loadFile({id:preLoads[i].name, src:preLoads[i].src});
+	  };
 
-
-      
-
-      function init(){
+      init = function (){
         var canvas = document.createElement("canvas");
 
         canvas.width = WIDTH;
@@ -45,7 +62,7 @@
         body.appendChild(canvas);
 
         stage = new createjs.Stage("gameCanvas");
-        var image = new createjs.Bitmap("images\\man.bmp");
+        var image = new createjs.Bitmap(queue.getResult("hero"));
 
         var DEBUG_FIELD = new createjs.Text("Test");
         var DEBUG_SHAPE = new createjs.Shape();
@@ -56,8 +73,8 @@
 
         stage.addChild(DEBUG_SHAPE);
 
-        image.regX = image.image.width /2;
-        image.regY = image.image.height /2;
+        image.regX = image.width /2;
+        image.regY = image.height /2;
         image.x = WIDTH / 2;
         image.y = HEIGHT / 2;
         stage.addChild(image);

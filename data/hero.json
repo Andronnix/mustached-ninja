@@ -1,0 +1,14 @@
+{
+	"animations": {
+		"run": [0, 7, "run"],
+		"stay": [0]
+		},
+		"images": "hero",
+		"frames": {
+			"width": 32,
+			"height": 32,
+			"regX" : 16,
+			"regY" : 16,
+			"count": 8          
+		}
+}

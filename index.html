@@ -3,7 +3,12 @@
   <HEAD>
   </HEAD>
   <BODY id="body" onload="load();">  
-  <!--<canvas id = "gameMapCanvas" width="6400" height="6400"></canvas>-->
+  <div style="position: relative;">
+ <canvas id="gameCanvas" width="640" height="640" 
+   style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+ <canvas id="gameMapCanvas" width="640" height="640" 
+   style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+</div> 
     <script src="lib\\easeljs-0.6.0.min.js"></script>
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
 
@@ -183,12 +188,14 @@
       
       function init() {
         
-        var canvas = document.createElement("canvas");
+        //var canvas = document.createElement("canvas");
+		var canvas = document.getElementById("gameCanvas");
 		var ctx = canvas.getContext('2d');
-        canvas.width = WIDTH;
+        /*canvas.width = WIDTH;
         canvas.height = HEIGHT;
+		canvas.style = "position: absolute; left: 0; top: 0; z-index: 1;";
         canvas.id = "gameCanvas";
-        body.appendChild(canvas);
+        body.appendChild(canvas);*/
 
         stage = new createjs.Stage("gameCanvas");
 
@@ -766,12 +773,13 @@ var TILEDMapClass = Class.extend({
 
 });
 
-//var mapCanvas = document.getElementById("gameMapCanvas");
-var mapCanvas = document.createElement("canvas");
-        mapCanvas.width = WIDTH;
+var mapCanvas = document.getElementById("gameMapCanvas");
+//var mapCanvas = document.createElement("canvas");
+        /*mapCanvas.width = WIDTH;
         mapCanvas.height = HEIGHT;
         mapCanvas.id = "gameMapCanvas";
-        body.appendChild(mapCanvas);
+		mapCanvas.style = "position: absolute; left: 0; top: 0; z-index: 0;";
+        body.appendChild(mapCanvas);*/
 mapCanvas.border = "1px solid black";
 var ctx = mapCanvas.getContext("2d");
 

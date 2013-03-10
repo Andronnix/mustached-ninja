@@ -62,15 +62,72 @@
         this.speed = 1.5;
 
         this.animation = null;
+        this.hitRadius = 0;
+        this.hitBox = null;
 
+        //безопасно двигаем, проверяя на столкновения        
         this.moveTo = function(x, y){
+          
+          var obst = gMap.obstacles;          
+          for(var i = 0; i < obst.length; i++){
+            var intersect = {x: 0, y: 0, w: 0, h: 0}
+
+            var x1 = x - this.hitRadius;
+            var x2 = x + this.hitRadius;
+            var x3 = obst[i].x;
+            var x4 = obst[i].x + obst[i].width;
+
+            if(x2 < x3 || x4 < x1) continue; //All is ok, no intersections
+
+            if(x1 < x3){ //x1 x3 x2 x4
+              intersect.x = x3;
+              intersect.w = x2 - x3;
+            }else if(x2 < x4){ //x3 x1 x2 x4
+              intersect.x = x1;
+              intersect.w = x2 - x1;
+            }else{ // x3 x1 x4 x2
+              intersect.x = x1;
+              intersect.w = x4 - x1;
+            }                          
+
+            var y1 = y - this.hitRadius;
+            var y2 = y + this.hitRadius;
+            var y3 = obst[i].y;
+            var y4 = obst[i].y + obst[i].height;
+            if(y2 < y3 || y4 < y1) continue; //All is ok, no intersections
+
+            if(y1 < y3){ //y1 y3 y2 y4
+              intersect.y = y3;
+              intersect.h = y2 - y3;
+            }else if(y2 < y4){ //y3 y1 y2 y4
+              intersect.y = y1;
+              intersect.h = y2 - y1;
+            }else{ // y3 y1 y4 y2
+              intersect.y = y1;
+              intersect.h = y4 - y1;
+            }                                  
+
+            if(intersect.w > intersect.h){
+              x = this.animation.x - intersect.w;
+              y = this.animation.y;
+            }else{
+              x = this.animation.x;
+              y = this.animation.y - intersect.h;
+            }
+
+            //Intersection, just return this time;
+
+          }
+
           this.animation.x = x;
           this.animation.y = y;
+
+          this.hitBox.x = x;// - this.hitRadius;
+          this.hitBox.y = y;// - this.hitRadius;
         }
 
         this.move = function(dx, dy){
-          this.animation.x += dx;
-          this.animation.y += dy;
+          this.moveTo(this.animation.x + dx, this.animation.y + dy);          
         }
 
         this.rotate = function(alpha){
@@ -80,11 +137,19 @@
         this.loadJSON = function(data){
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
-          
+          this.hitRadius = r.hitRadius;
+          console.log(this.hitRadius);
+          this.hitBox = new createjs.Shape();
+          this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
+          this.hitBox.x = x;
+          this.hitBox.y = y;
+          stage.addChild(this.hitBox);
+
 
           var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
-          this.moveTo(x, y);
+          this.animation.x = x;
+          this.animation.y = y;
           this.animate("run");
           stage.addChild(this.animation);
         }
@@ -271,7 +336,7 @@
         }
       }
 
-
+      //Класс зомби спаунера
       //Передаем туда структуру с информацией о позиции, времени первого спауна, количестве спанов      
       function zombieSpawner(data){
         this.spawnDelay = data.properties.delay;
@@ -297,6 +362,7 @@
           }
         });
       }
+
       //Класс многослойной карты из тайлов
       var TILEDMap = function(){
           // This is where we store the full parsed
@@ -534,8 +600,13 @@
                           stage.addChild(b);   
                         }else{ 
                           // Add obstacle to array
-                          //var r = createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);
-                          //this.obstacles.push(r);
+                          var r = new createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);                          
+                          this.obstacles.push(r);
+
+
+                          var ddd = new createjs.Shape();
+                          ddd.graphics.s("#f00").r(r.x, r.y, r.width, r.height);
+                          stage.addChild(ddd);
                         }
                     }
                   }

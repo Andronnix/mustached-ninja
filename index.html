@@ -197,7 +197,7 @@
         stage = new createjs.Stage("gameCanvas");
 
 
-        gMap = new TILEDMapClass();
+        gMap = new TILEDMap();
         gMap.load('testMap1');
         gMap.draw();
 
@@ -287,199 +287,17 @@
         }
       }
 
-	//CAREFUL!!!
-	//HERE STARTS HEEEELL!!!
-    	Array.prototype.erase = function (item) {
-        for (var i = this.length; i--; i) {
-            if (this[i] === item) this.splice(i, 1);
-        }
-
-        return this;
-      };
-
-      Function.prototype.bind = function (bind) {
-          var self = this;
-          return function () {
-              var args = Array.prototype.slice.call(arguments);
-              return self.apply(bind || null, args);
-          };
-      };
-
-      merge = function (original, extended) {
-          for (var key in extended) {
-              var ext = extended[key];
-              if (typeof (ext) != 'object' || ext instanceof Class) {
-                  original[key] = ext;
-              } else {
-                  if (!original[key] || typeof (original[key]) != 'object') {
-                      original[key] = {};
-                  }
-                  merge(original[key], ext);
-              }
-          }
-          return original;
-      };
-
-      function copy(object) {
-          if (!object || typeof (object) != 'object' || object instanceof Class) {
-              return object;
-          } else if (object instanceof Array) {
-              var c = [];
-              for (var i = 0, l = object.length; i < l; i++) {
-                  c[i] = copy(object[i]);
-              }
-              return c;
-          } else {
-              var c = {};
-              for (var i in object) {
-                  c[i] = copy(object[i]);
-              }
-              return c;
-          }
-      }
-
-      function ksort(obj) {
-          if (!obj || typeof (obj) != 'object') {
-              return [];
-          }
-
-          var keys = [],
-              values = [];
-          for (var i in obj) {
-              keys.push(i);
-          }
-
-          keys.sort();
-          for (var i = 0; i < keys.length; i++) {
-              values.push(obj[keys[i]]);
-          }
-
-          return values;
-      }
-
-      // -----------------------------------------------------------------------------
-      // Class object based on John Resigs code; inspired by base2 and Prototype
-      // http://ejohn.org/blog/simple-javascript-inheritance/
-      (function () {
-          var initializing = false,
-              fnTest = /xyz/.test(function () {
-                  xyz;
-              }) ? /\bparent\b/ : /.*/;
-
-          this.Class = function () {};
-          var inject = function (prop) {
-              var proto = this.prototype;
-              var parent = {};
-              for (var name in prop) {
-                  if (typeof (prop[name]) == "function" && typeof (proto[name]) == "function" && fnTest.test(prop[name])) {
-                      parent[name] = proto[name]; // save original function
-                      proto[name] = (function (name, fn) {
-                          return function () {
-                              var tmp = this.parent;
-                              this.parent = parent[name];
-                              var ret = fn.apply(this, arguments);
-                              this.parent = tmp;
-                              return ret;
-                          };
-                      })(name, prop[name]);
-                  } else {
-                      proto[name] = prop[name];
-                  }
-              }
-          };
-
-          this.Class.extend = function (prop) {
-              var parent = this.prototype;
-
-              initializing = true;
-              var prototype = new this();
-              initializing = false;
-
-              for (var name in prop) {
-                  if (typeof (prop[name]) == "function" && typeof (parent[name]) == "function" && fnTest.test(prop[name])) {
-                      prototype[name] = (function (name, fn) {
-                          return function () {
-                              var tmp = this.parent;
-                              this.parent = parent[name];
-                              var ret = fn.apply(this, arguments);
-                              this.parent = tmp;
-                              return ret;
-                          };
-                      })(name, prop[name]);
-                  } else {
-                      prototype[name] = prop[name];
-                  }
-              }
-
-              function Class() {
-                  if (!initializing) {
-
-                      // If this class has a staticInstantiate method, invoke it
-                      // and check if we got something back. If not, the normal
-                      // constructor (init) is called.
-                      if (this.staticInstantiate) {
-                          var obj = this.staticInstantiate.apply(this, arguments);
-                          if (obj) {
-                              return obj;
-                          }
-                      }
-
-                      for (var p in this) {
-                          if (typeof (this[p]) == 'object') {
-                              this[p] = copy(this[p]); // deep copy!
-                          }
-                      }
-
-                      if (this.init) {
-                          this.init.apply(this, arguments);
-                      }
-                  }
-
-                  return this;
-              }
-
-              Class.prototype = prototype;
-              Class.constructor = Class;
-              Class.extend = arguments.callee;
-              Class.inject = inject;
-
-              return Class;
-          };
-
-      })();
-
-      newGuid_short = function () {
-          var S4 = function () {
-              return (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
-          };
-          return (S4()).toString();
-      };
-
-
-
-
-     /* function xhrGet(reqUri,callback) {
-          var xhr = new XMLHttpRequest();
-
-          xhr.open("GET", reqUri, true);
-          xhr.onload = callback;
-
-          xhr.send();
-      }*/
-
-
-
-      var TILEDMapClass = Class.extend({
+      var TILEDMap = function(){
           // This is where we store the full parsed
           // JSON of the map.json file.
-          currMapData: null,
+          this.currMapData = null;
 
           // tilesets stores each individual tileset
           // from the map.json's 'tilesets' Array.
           // The structure of each entry of this
           // Array is explained below in the
           // parseAtlasDefinition method.
-          tilesets: [],
+          this.tilesets = [];
 
           // This is where we store the width and
           // height of the map in tiles. This is
@@ -488,8 +306,8 @@
           // The values 100 here are just set
           // so these fields are initialized to
           // something, rather than null.
-          numXTiles: 100,
-          numYTiles: 100,
+          this.numXTiles = 100;
+          this.numYTiles = 100;
 
           // The size of each individual map
           // tile, in pixels. This is in the
@@ -498,10 +316,10 @@
           // The values 64 here are just set
           // so these fields are initialized to
           // something, rather than null.
-          tileSize: {
+          this.tileSize = {
               "x": 64,
               "y": 64
-          },
+          };
 
           // The size of the entire map,
           // in pixels. This is calculated
@@ -510,99 +328,53 @@
           // The values 64 here are just set
           // so these fields are initialized to
           // something, rather than null.
-          pixelSize: {
+          this.pixelSize = {
               "x": 64,
               "y": 64
-          },
+          };
 
-          // Counter to keep track of how many tile
-          // images we have successfully loaded.
-          imgLoadCount: 0,
+          this.load = function (mapName) {      
+              this.currMapData = resources[mapName];
 
-          // Boolean flag we set once our tile images
-          // has finished loading.
-          fullyLoaded: false,
-
-          //-----------------------------------------
-          // Load the json file at the url 'map' into
-          // memory. This is similar to the requests
-          // we've done in the past using
-          // XMLHttpRequests.
-          load: function (map) {      
-              console.log(resources);        
-              console.log(resources[map]);
-              gMap.parseMap(resources[map]);
-          },
-
-          //-----------------------------------------
-          // Parses the map data from 'mapJSON', then
-          // stores that data in a number of members
-          // of our 'TILEDMapClass' that are defined
-          // above.
-          parseMap: function (map) {
-              // Call JSON.parse on 'mapJSON' and store
-              // the resulting map data
-              //gMap.currMapData = JSON.parse(mapJSON);
-              gMap.currMapData = map;
-
-              var map = gMap.currMapData;
+              var map = this.currMapData;
             
               // Set 'numXTiles' and 'numYTiles' from the
               // 'width' and 'height' fields of our parsed
               // map data.
-              gMap.numXTiles = map.width;
-              gMap.numYTiles = map.height;
+              this.numXTiles = map.width;
+              this.numYTiles = map.height;
             
               // Set the 'tileSize.x' and 'tileSize.y' fields
               // from the 'tilewidth' and 'tileheight' fields
               // of our parsed map data.
-              gMap.tileSize.x = map.tilewidth;
-              gMap.tileSize.y = map.tileheight;
+              this.tileSize.x = map.tilewidth;
+              this.tileSize.y = map.tileheight;
             
               // Set the 'pixelSize.x' and 'pixelSize.y' fields
               // by multiplying the number of tiles in our map
               // by the size of each tile in pixels.
-              gMap.pixelSize.x = gMap.numXTiles * gMap.tileSize.x;
-              gMap.pixelSize.y = gMap.numYTiles * gMap.tileSize.y;
+              this.pixelSize.x = this.numXTiles * this.tileSize.x;
+              this.pixelSize.y = this.numYTiles * this.tileSize.y;
 
               // Loop through 'map.tilesets', an Array...
               for(var i = 0; i < map.tilesets.length; i++) {
-
-                  // ...loading each of the provided tilesets as
-                  // Images...
-                  /*var img = new Image();
-                  img.onload = function () {
-                      // ...Increment the above 'imgLoadCount'
-                      // field of 'TILEDMap' as each tileset is 
-                      // loading...
-                      gMap.imgLoadCount++;
-                      if (gMap.imgLoadCount === map.tilesets.length) {
-                          // ...Once all the tilesets are loaded, 
-                          // set the 'fullyLoaded' flag to true...
-                          gMap.fullyLoaded = true;
-                      }
-                  };
-
-                  // The 'src' value to load each new Image from is in
-                  // the 'image' property of the 'tilesets'.
-                  img.src = map.tilesets[i].image;
-                  */
-                  var img = resources[gMap.currMapData.tilesets[i].name];
+                  //Load image from resources
+                  var img = resources[map.tilesets[i].name];
 
                   // This is the javascript object we'll create for
                   // the 'tilesets' Array above. First, fill in the
                   // given fields with the corresponding fields from
                   // the 'tilesets' Array in 'currMapData'.
                   var ts = {
-                      "firstgid": gMap.currMapData.tilesets[i].firstgid,
+                      "firstgid": map.tilesets[i].firstgid,
 
                       // 'image' should equal the Image object we
                       // just created.
 
                       "image": img,
-                      "imageheight": gMap.currMapData.tilesets[i].imageheight,
-                      "imagewidth": gMap.currMapData.tilesets[i].imagewidth,
-                      "name": gMap.currMapData.tilesets[i].name,
+                      "imageheight": map.tilesets[i].imageheight,
+                      "imagewidth": map.tilesets[i].imagewidth,
+                      "name": map.tilesets[i].name,
 
                       // These next two fields are tricky. You'll
                       // need to calculate this data from the
@@ -613,8 +385,8 @@
                       // might need to do a bit of manipulation after
                       // you calculate it.
 
-                      "numXTiles": Math.floor(gMap.currMapData.tilesets[i].imagewidth / gMap.tileSize.x),
-                      "numYTiles": Math.floor(gMap.currMapData.tilesets[i].imageheight / gMap.tileSize.y)
+                      "numXTiles": Math.floor(map.tilesets[i].imagewidth / this.tileSize.x),
+                      "numYTiles": Math.floor(map.tilesets[i].imageheight / this.tileSize.y)
                   };
 
                   // After that, push the newly created object into
@@ -624,10 +396,9 @@
                   // we'd like to put into the Array as a parameter.
                   // 
                   // YOUR CODE HERE
-                  gMap.tilesets.push(ts);
+                  this.tilesets.push(ts);
               }
-              gMap.fullyLoaded = true;
-          },
+          };
 
           //-----------------------------------------
           // Grabs a tile from our 'layer' data and returns
@@ -635,7 +406,7 @@
           // It takes as a parameter 'tileIndex', which is
           // the id of the tile we'd like to draw in our
           // layer data.
-          getTilePacket: function (tileIndex) {
+          this.getTilePacket = function (tileIndex) {
 
               // We define a 'pkt' object that will contain
               // 
@@ -658,15 +429,18 @@
               // that tile is not in the given tileset and
               // we can skip to the next one.
               var tile = 0;
-              for(tile = gMap.tilesets.length - 1; tile >= 0; tile--) {
-                  if(gMap.tilesets[tile].firstgid <= tileIndex) break;
+
+              console.log(this.tilesets);
+
+              for(tile = this.tilesets.length - 1; tile >= 0; tile--) {
+                  if(this.tilesets[tile].firstgid <= tileIndex) break;
               }
 
               // Next, we need to set the 'img' parameter
               // in our 'pkt' object to the Image object
               // of the appropriate 'tileset' that we found
               // above.
-              pkt.img = gMap.tilesets[tile].image;
+              pkt.img = this.tilesets[tile].image;
 
 
               // Finally, we need to calculate the position to
@@ -675,7 +449,7 @@
               // 1) The local id of the tile, calculated from the
               //    'tileIndex' of the tile we want to draw and
               //    the 'firstgid' of the tileset we found earlier.
-              var localIdx = tileIndex - gMap.tilesets[tile].firstgid;
+              var localIdx = tileIndex - this.tilesets[tile].firstgid;
 
               // 2) The (x,y) position of the tile in terms of the
               //    number of tiles in our tileset. This is based on
@@ -684,37 +458,36 @@
               //    how the tiles are arranged if you don't see this,
               //    It's a little tricky. You might want to use the 
               //    modulo and division operators here.
-              var lTileX = Math.floor(localIdx % gMap.tilesets[tile].numXTiles);
-              var lTileY = Math.floor(localIdx / gMap.tilesets[tile].numXTiles);
+              var lTileX = Math.floor(localIdx % this.tilesets[tile].numXTiles);
+              var lTileY = Math.floor(localIdx / this.tilesets[tile].numXTiles);
 
               // 3) the (x,y) pixel position in our tileset image of the
               //    tile we want to draw. This is based on the tile
               //    position we just calculated and the (x,y) size of
               //    each tile in pixels.
-              pkt.px = (lTileX * gMap.tileSize.x);
-              pkt.py = (lTileY * gMap.tileSize.y);
+              pkt.px = (lTileX * this.tileSize.x);
+              pkt.py = (lTileY * this.tileSize.y);
 
 
               return pkt;
-          },
+          };
 
           //-----------------------------------------
           // Draws all of the map data to the passed-in
           // canvas context, 'ctx'.
-          draw: function () {
+          this.draw = function () {
               // First, we need to check if the map data has
               // already finished loading...
-              if(!gMap.fullyLoaded) return;
 
               // ...Now, for every single layer in the 'layers' Array
               // of 'currMapData'...
-              for(var layerIdx = 0; layerIdx < gMap.currMapData.layers.length; layerIdx++) {
+              for(var layerIdx = 0; layerIdx < this.currMapData.layers.length; layerIdx++) {
                   // Check if the 'type' of the layer is "tilelayer". If it isn't, we don't
                   // care about drawing it...
-                  if(gMap.currMapData.layers[layerIdx].type != "tilelayer") continue;
+                  if(this.currMapData.layers[layerIdx].type != "tilelayer") continue;
 
                   // ...Grab the 'data' Array of the given layer...
-                  var dat = gMap.currMapData.layers[layerIdx].data;
+                  var dat = this.currMapData.layers[layerIdx].data;
 
                   // ...For each tileID in the 'data' Array...
                   for(var tileIDX = 0; tileIDX < dat.length; tileIDX++) {
@@ -725,7 +498,7 @@
 
                       // ...If the tileID is not 0, then we grab the
                       // packet data using getTilePacket.
-                      var tPKT = gMap.getTilePacket(tID);
+                      var tPKT = this.getTilePacket(tID);
 
                       // Now we need to calculate the (x,y) position we want to draw
                       // to in our game world.
@@ -733,53 +506,22 @@
                       // We've performed a similar calculation in 'getTilePacket',
                       // think about how to calculate this based on the tile id and
                       // various tile properties that our TILEDMapClass has.
-                      //
-                      // YOUR CODE HERE
-                      var dx = Math.floor(tileIDX % gMap.numXTiles) * gMap.tileSize.x;
-                      var dy = Math.floor(tileIDX / gMap.numXTiles) * gMap.tileSize.y;
 
-                      // Now, we're finally drawing the map to our canvas! The 'drawImage'
-                      // method of our 'ctx' object takes nine arguments:
-                      //
-                      // 1) The Image object to draw,
-                      // 2) The source x coordinate in our Image,
-                      // 3) The source y coordinate in our Image,
-                      // 4) The source width of our tile,
-                      // 5) The source height of our tile,
-                      // 6) The canvas x coordinate to draw to,
-                      // 7) The canvas y coordinate to draw to,
-                      // 8) The destination width,
-                      // 9) The destination height
-                      //
-                      // Note that we don't want to stretch our tiles at all, so the
-                      // source height and width should be the same as the destination!
-                      //
-                      // YOUR CODE HERE
+                      var dx = Math.floor(tileIDX % this.numXTiles) * this.tileSize.x;
+                      var dy = Math.floor(tileIDX / this.numXTiles) * this.tileSize.y;
+
+                      // Now, we're finally drawing the map to our canvas!
 
                       var b = new createjs.Bitmap(tPKT.img);
-                      b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, gMap.tileSize.x, gMap.tileSize.y);
+                      b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, this.tileSize.x, this.tileSize.y);
                       b.x = dx;
                       b.y = dy;
-                      stage.addChild(b);
-                      //ctx.drawImage(tPKT.img, , dx, dy, gMap.tileSize.x, gMap.tileSize.y);
-                      
-
+                      stage.addChild(b);                    
                   }
               }
           }
 
-      });
-/*
-var mapCanvas = document.getElementById("gameMapCanvas");
-//var mapCanvas = document.createElement("canvas");
-        /*mapCanvas.width = WIDTH;
-        mapCanvas.height = HEIGHT;
-        mapCanvas.id = "gameMapCanvas";
-		mapCanvas.style = "position: absolute; left: 0; top: 0; z-index: 0;";
-        body.appendChild(mapCanvas);
-mapCanvas.border = "1px solid black";
-var ctx = mapCanvas.getContext("2d");
-*/
+      };
     </script>  
   </BODY>
 </HTML>

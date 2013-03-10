@@ -5,14 +5,14 @@
 	},
 	{
 		"name" : "zombie",
-		"src" : "images\\Zombie.png"
+		"src" : "images\\zombie.png"
 	},
 	{
 		"name" : "heroJSON",
-		"src" : "data\\Hero.json"
+		"src" : "data\\hero.json"
 	},
 	{
-		"name" : "testMap",
+		"name" : "testMap1",
 		"src" : "data\\testMap1.json"
 	},	
 	{

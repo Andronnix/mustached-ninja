@@ -3,8 +3,15 @@
   <HEAD>
   </HEAD>
   <BODY id="body" onload="load();">  
+    <!-- <div style="position: relative;">
+      <canvas id="gameCanvas" width="640" height="640" 
+        style="position: absolute; left: 0; top: 0; z-index: 1;"></canvas>
+      <canvas id="gameMapCanvas" width="640" height="640" 
+        style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
+    </div>  -->
     <script src="lib\\easeljs-0.6.0.min.js"></script>
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
+
 
     <script>
       var WIDTH = 640;
@@ -36,10 +43,12 @@
       var player;
       var resources = [];
 
+      var gMap;
+
       document.onkeydown = handleKeyDown;
       document.onkeyup = handleKeyUp;
 
-      //re
+      //запрос, передаем URI, контекст выполнения callback функции, сам callback, необязательный параметр асинхронного запроса, по умолчанию true
       function xhrGet(reqUri, context, callback, async) {
         async = async || true;
         var xhr = new XMLHttpRequest();
@@ -52,38 +61,35 @@
           xhr.send();
       }
 
-
+      //Класс зомби
       function Zombie(){
         this.speed = 1.5;
 
-        this.animationJSON = null;
         this.animation = null;
 
         this.moveTo = function(x, y){
           this.animation.x = x;
           this.animation.y = y;
         }
+
         this.move = function(dx, dy){
           this.animation.x += dx;
           this.animation.y += dy;
         }
+
         this.rotate = function(alpha){
           this.animation.rotation = alpha;
         }
-        this.show = function(){
-          stage.addChild(this.animation);
-        }
+
         this.loadJSON = function(data){
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
-          this.animationJSON = r; 
-          r = null;   
           
 
-          var ss = new createjs.SpriteSheet(this.animationJSON);             
+          var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
           this.animate("run");
-          this.show();
+          stage.addChild(this.animation);
         }
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
@@ -100,16 +106,19 @@
 
           this.move(v.x, v.y);
         }
+
+        //загружаем, отрисовываем зомбя
         this.loadJSON();
 
-        var ZZ = this;//TODO ГОВНОКОД
+        //Запускаем слежение за игроком
+        var ZZ = this;      
         createjs.Ticker.addEventListener("tick", function(){hunt.call(ZZ);});
       }
 
+      //Класс игрок
       function Player(){
         this.speed = 3;
 
-        this.animationJSON = null;
         this.animation = null;
 
         this.moveTo = function(x, y){
@@ -123,18 +132,14 @@
         this.rotate = function(alpha){
           this.animation.rotation = alpha;
         }
-        this.show = function(){
-          stage.addChild(this.animation);
-        }
         this.loadJSON = function(data){
           var r = resources["heroJSON"];
           r.images = [resources["hero"]];
-          this.animationJSON = r;
 
-          var ss = new createjs.SpriteSheet(this.animationJSON);             
+          var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
           this.animate("run");
-          this.show();
+          stage.addChild(this.animation);
         }
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
@@ -142,9 +147,11 @@
         this.loadJSON();
       }
 
+      //Загрузка всех ресурсов, и запуск функции init()
       function load(){
         var preLoads;
-        var objQueue = new createjs.LoadQueue();        
+        var objQueue = new createjs.LoadQueue();
+
         objQueue.addEventListener("complete", function(){             
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads.json'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
@@ -161,12 +168,13 @@
                   };
                 }
         ); //we load all src links into 'preLoads'
+
       }
       
+      //Создаем канвас, грузим карту, игрока, зомбей, запускаем
       function init() {
-        
-        var canvas = document.createElement("canvas");
 
+        var canvas = document.createElement("canvas");
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
         canvas.id = "gameCanvas";
@@ -174,12 +182,19 @@
 
         stage = new createjs.Stage("gameCanvas");
 
+        //firstly draw map on the bottom layers
+        gMap = new TILEDMap();
+        gMap.load('testMap1');
+        gMap.draw();
+
+
         DEBUG_FIELD = new createjs.Text("Test");
         DEBUG_SHAPE = new createjs.Shape();
 
         DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
         stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
-
+		
+        
         player = new Player();
 
         for(i = 0; i < 10; i++){
@@ -198,12 +213,10 @@
                 
         createjs.Ticker.addEventListener("tick", handleTick);
         function handleTick(event) {
+          //Просто смотрим на мышку
 
           var a = Math.atan2(stage.mouseY - player.animation.y, stage.mouseX - player.animation.x) + Math.PI / 2;
-
           player.animation.rotation = 180 * a / Math.PI;
-
-          // DEBUG_FIELD.text = image.rotation;
 
           var v = {x:0, y:0};  // player speed vector
 
@@ -217,19 +230,9 @@
           }else{
             if(player.animation.currentAnimation != "run")
               player.animate("run");
-          }
-          var x0 = v.x;
-
-          v.x = v.x * Math.cos(a) - v.y * Math.sin(a);
-          v.y = x0 * Math.sin(a) + v.y * Math.cos(a);  
+          }		
 
           player.move(v.x, v.y);
-          /*DEBUG_SHAPE.graphics.clear();
-          
-          DEBUG_SHAPE.graphics.beginStroke("#f00").mt(0,0).lt(v.x * 10, 0);
-          DEBUG_SHAPE.graphics.beginStroke("#0f0").mt(0,0).lt(0, 10 * v.y);
-          DEBUG_SHAPE.graphics.beginStroke("#00f").mt(0,0).lt(10 * v.x, 10 * v.y);
-          DEBUG_SHAPE.x = image.x; DEBUG_SHAPE.y = image.y; */
         }
 
       }
@@ -267,7 +270,241 @@
         }
       }
 
+      //Класс многослойной карты из тайлов
+      var TILEDMap = function(){
+          // This is where we store the full parsed
+          // JSON of the map.json file.
+          this.currMapData = null;
 
+          // tilesets stores each individual tileset
+          // from the map.json's 'tilesets' Array.
+          // The structure of each entry of this
+          // Array is explained below in the
+          // parseAtlasDefinition method.
+          this.tilesets = [];
+
+          // This is where we store the width and
+          // height of the map in tiles. This is
+          // in the 'width' and 'height' fields
+          // of map.json, respectively.
+          // The values 100 here are just set
+          // so these fields are initialized to
+          // something, rather than null.
+          this.numXTiles = 100;
+          this.numYTiles = 100;
+
+          // The size of each individual map
+          // tile, in pixels. This is in the
+          // 'tilewidth' and 'tileheight' fields
+          // of map.json, respectively.
+          // The values 64 here are just set
+          // so these fields are initialized to
+          // something, rather than null.
+          this.tileSize = {
+              "x": 64,
+              "y": 64
+          };
+
+          // The size of the entire map,
+          // in pixels. This is calculated
+          // based on the 'numXTiles', 'numYTiles',
+          // and 'tileSize' parameters.
+          // The values 64 here are just set
+          // so these fields are initialized to
+          // something, rather than null.
+          this.pixelSize = {
+              "x": 64,
+              "y": 64
+          };
+
+          this.load = function (mapName) {      
+              this.currMapData = resources[mapName];
+
+              var map = this.currMapData;
+            
+              // Set 'numXTiles' and 'numYTiles' from the
+              // 'width' and 'height' fields of our parsed
+              // map data.
+              this.numXTiles = map.width;
+              this.numYTiles = map.height;
+            
+              // Set the 'tileSize.x' and 'tileSize.y' fields
+              // from the 'tilewidth' and 'tileheight' fields
+              // of our parsed map data.
+              this.tileSize.x = map.tilewidth;
+              this.tileSize.y = map.tileheight;
+            
+              // Set the 'pixelSize.x' and 'pixelSize.y' fields
+              // by multiplying the number of tiles in our map
+              // by the size of each tile in pixels.
+              this.pixelSize.x = this.numXTiles * this.tileSize.x;
+              this.pixelSize.y = this.numYTiles * this.tileSize.y;
+
+              // Loop through 'map.tilesets', an Array...
+              for(var i = 0; i < map.tilesets.length; i++) {
+                  //Load image from resources
+                  var img = resources[map.tilesets[i].name];
+
+                  // This is the javascript object we'll create for
+                  // the 'tilesets' Array above. First, fill in the
+                  // given fields with the corresponding fields from
+                  // the 'tilesets' Array in 'currMapData'.
+                  var ts = {
+                      "firstgid": map.tilesets[i].firstgid,
+
+                      // 'image' should equal the Image object we
+                      // just created.
+
+                      "image": img,
+                      "imageheight": map.tilesets[i].imageheight,
+                      "imagewidth": map.tilesets[i].imagewidth,
+                      "name": map.tilesets[i].name,
+
+                      // These next two fields are tricky. You'll
+                      // need to calculate this data from the
+                      // width and height of the overall image and
+                      // the size of each individual tile.
+                      // 
+                      // Remember: This should be an integer, so you
+                      // might need to do a bit of manipulation after
+                      // you calculate it.
+
+                      "numXTiles": Math.floor(map.tilesets[i].imagewidth / this.tileSize.x),
+                      "numYTiles": Math.floor(map.tilesets[i].imageheight / this.tileSize.y)
+                  };
+
+                  // After that, push the newly created object into
+                  // the 'tilesets' Array above. Javascript Arrays
+                  // have a handy method called, appropriately, 'push'
+                  // that does exactly this. It takes the object
+                  // we'd like to put into the Array as a parameter.
+                  // 
+                  // YOUR CODE HERE
+                  this.tilesets.push(ts);
+              }
+          };
+
+          //-----------------------------------------
+          // Grabs a tile from our 'layer' data and returns
+          // the 'pkt' object for the layer we want to draw.
+          // It takes as a parameter 'tileIndex', which is
+          // the id of the tile we'd like to draw in our
+          // layer data.
+          this.getTilePacket = function (tileIndex) {
+
+              // We define a 'pkt' object that will contain
+              // 
+              // 1) The Image object of the given tile.
+              // 2) The (x,y) values that we want to draw
+              //    the tile to in map coordinates.
+              var pkt = {
+                  "img": null,
+                  "px": 0,
+                  "py": 0
+              };
+
+              // The first thing we need to do is find the
+              // appropriate tileset that we want to draw
+              // from.
+              //
+              // Remember, if the tileset's 'firstgid'
+              // parameter is less than the 'tileIndex'
+              // of the tile we want to draw, then we know
+              // that tile is not in the given tileset and
+              // we can skip to the next one.
+              var tile = 0;
+
+              console.log(this.tilesets);
+
+              for(tile = this.tilesets.length - 1; tile >= 0; tile--) {
+                  if(this.tilesets[tile].firstgid <= tileIndex) break;
+              }
+
+              // Next, we need to set the 'img' parameter
+              // in our 'pkt' object to the Image object
+              // of the appropriate 'tileset' that we found
+              // above.
+              pkt.img = this.tilesets[tile].image;
+
+
+              // Finally, we need to calculate the position to
+              // draw to based on:
+              //
+              // 1) The local id of the tile, calculated from the
+              //    'tileIndex' of the tile we want to draw and
+              //    the 'firstgid' of the tileset we found earlier.
+              var localIdx = tileIndex - this.tilesets[tile].firstgid;
+
+              // 2) The (x,y) position of the tile in terms of the
+              //    number of tiles in our tileset. This is based on
+              //    the 'numXTiles' of the given tileset. Note that
+              //    'numYTiles' isn't actually needed here. Think about
+              //    how the tiles are arranged if you don't see this,
+              //    It's a little tricky. You might want to use the 
+              //    modulo and division operators here.
+              var lTileX = Math.floor(localIdx % this.tilesets[tile].numXTiles);
+              var lTileY = Math.floor(localIdx / this.tilesets[tile].numXTiles);
+
+              // 3) the (x,y) pixel position in our tileset image of the
+              //    tile we want to draw. This is based on the tile
+              //    position we just calculated and the (x,y) size of
+              //    each tile in pixels.
+              pkt.px = (lTileX * this.tileSize.x);
+              pkt.py = (lTileY * this.tileSize.y);
+
+
+              return pkt;
+          };
+
+          //-----------------------------------------
+          // Draws all of the map data
+          this.draw = function () {
+              // First, we need to check if the map data has
+              // already finished loading...
+
+              // ...Now, for every single layer in the 'layers' Array
+              // of 'currMapData'...
+              for(var layerIdx = 0; layerIdx < this.currMapData.layers.length; layerIdx++) {
+                  // Check if the 'type' of the layer is "tilelayer". If it isn't, we don't
+                  // care about drawing it...
+                  if(this.currMapData.layers[layerIdx].type != "tilelayer") continue;
+
+                  // ...Grab the 'data' Array of the given layer...
+                  var dat = this.currMapData.layers[layerIdx].data;
+
+                  // ...For each tileID in the 'data' Array...
+                  for(var tileIDX = 0; tileIDX < dat.length; tileIDX++) {
+                      // ...Check if that tileID is 0. Remember, we don't draw
+                      // draw those, so we can skip processing them...
+                      var tID = dat[tileIDX];
+                      if(tID === 0) continue;
+
+                      // ...If the tileID is not 0, then we grab the
+                      // packet data using getTilePacket.
+                      var tPKT = this.getTilePacket(tID);
+
+                      // Now we need to calculate the (x,y) position we want to draw
+                      // to in our game world.
+                      //
+                      // We've performed a similar calculation in 'getTilePacket',
+                      // think about how to calculate this based on the tile id and
+                      // various tile properties that our TILEDMapClass has.
+
+                      var dx = Math.floor(tileIDX % this.numXTiles) * this.tileSize.x;
+                      var dy = Math.floor(tileIDX / this.numXTiles) * this.tileSize.y;
+
+                      // Now, we're finally drawing the map to our canvas!
+
+                      var b = new createjs.Bitmap(tPKT.img);
+                      b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, this.tileSize.x, this.tileSize.y);
+                      b.x = dx;
+                      b.y = dy;
+                      stage.addChild(b);                    
+                  }
+              }
+          }
+
+      };
     </script>  
   </BODY>
 </HTML>

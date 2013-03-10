@@ -48,7 +48,7 @@
       document.onkeydown = handleKeyDown;
       document.onkeyup = handleKeyUp;
 
-      //re
+      //запрос, передаем URI, контекст выполнения callback функции, сам callback, необязательный параметр асинхронного запроса, по умолчанию true
       function xhrGet(reqUri, context, callback, async) {
         async = async || true;
         var xhr = new XMLHttpRequest();
@@ -61,38 +61,35 @@
           xhr.send();
       }
 
-
+      //Класс зомби
       function Zombie(){
         this.speed = 1.5;
 
-        this.animationJSON = null;
         this.animation = null;
 
         this.moveTo = function(x, y){
           this.animation.x = x;
           this.animation.y = y;
         }
+
         this.move = function(dx, dy){
           this.animation.x += dx;
           this.animation.y += dy;
         }
+
         this.rotate = function(alpha){
           this.animation.rotation = alpha;
         }
-        this.show = function(){
-          stage.addChild(this.animation);
-        }
+
         this.loadJSON = function(data){
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
-          this.animationJSON = r; 
-          r = null;   
           
 
-          var ss = new createjs.SpriteSheet(this.animationJSON);             
+          var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
           this.animate("run");
-          this.show();
+          stage.addChild(this.animation);
         }
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
@@ -109,16 +106,19 @@
 
           this.move(v.x, v.y);
         }
+
+        //загружаем, отрисовываем зомбя
         this.loadJSON();
 
-        var ZZ = this;//TODO ГОВНОКОД
+        //Запускаем слежение за игроком
+        var ZZ = this;      
         createjs.Ticker.addEventListener("tick", function(){hunt.call(ZZ);});
       }
 
+      //Класс игрок
       function Player(){
         this.speed = 3;
 
-        this.animationJSON = null;
         this.animation = null;
 
         this.moveTo = function(x, y){
@@ -132,18 +132,14 @@
         this.rotate = function(alpha){
           this.animation.rotation = alpha;
         }
-        this.show = function(){
-          stage.addChild(this.animation);
-        }
         this.loadJSON = function(data){
           var r = resources["heroJSON"];
           r.images = [resources["hero"]];
-          this.animationJSON = r;
 
-          var ss = new createjs.SpriteSheet(this.animationJSON);             
+          var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
           this.animate("run");
-          this.show();
+          stage.addChild(this.animation);
         }
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
@@ -151,6 +147,7 @@
         this.loadJSON();
       }
 
+      //Загрузка всех ресурсов, и запуск функции init()
       function load(){
         var preLoads;
         var objQueue = new createjs.LoadQueue();
@@ -159,14 +156,7 @@
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads.json'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
             }
-  					//addings	
-            /*
-            var rval = setInterval(function() {
-                if (gMap.fullyLoaded) {
-                    gMap.draw();
-                    clearInterval(rval);
-                }
-            }, 500);*/
+
             init();
         });        
         xhrGet("data\\preLoads.json", 
@@ -179,24 +169,20 @@
                 }
         ); //we load all src links into 'preLoads'
 
-
-
       }
       
+      //Создаем канвас, грузим карту, игрока, зомбей, запускаем
       function init() {
 
-        
         var canvas = document.createElement("canvas");
-		    var ctx = canvas.getContext('2d');
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
-
         canvas.id = "gameCanvas";
         body.appendChild(canvas);
 
         stage = new createjs.Stage("gameCanvas");
 
-
+        //firstly draw map on the bottom layers
         gMap = new TILEDMap();
         gMap.load('testMap1');
         gMap.draw();
@@ -208,10 +194,7 @@
         DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
         stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
 		
-        //first draw map on the bottom layers
-
-
-
+        
         player = new Player();
 
         for(i = 0; i < 10; i++){
@@ -230,9 +213,9 @@
                 
         createjs.Ticker.addEventListener("tick", handleTick);
         function handleTick(event) {
+          //Просто смотрим на мышку
 
           var a = Math.atan2(stage.mouseY - player.animation.y, stage.mouseX - player.animation.x) + Math.PI / 2;
-
           player.animation.rotation = 180 * a / Math.PI;
 
           var v = {x:0, y:0};  // player speed vector
@@ -287,6 +270,7 @@
         }
       }
 
+      //Класс многослойной карты из тайлов
       var TILEDMap = function(){
           // This is where we store the full parsed
           // JSON of the map.json file.
@@ -473,8 +457,7 @@
           };
 
           //-----------------------------------------
-          // Draws all of the map data to the passed-in
-          // canvas context, 'ctx'.
+          // Draws all of the map data
           this.draw = function () {
               // First, we need to check if the map data has
               // already finished loading...

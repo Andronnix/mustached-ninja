@@ -56,7 +56,9 @@
       }
 
       //Класс зомби
-      function Zombie(){
+      function Zombie(x, y){
+        x = x || 0;
+        y = y || 0;
         this.speed = 1.5;
 
         this.animation = null;
@@ -82,6 +84,7 @@
 
           var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
+          this.moveTo(x, y);
           this.animate("run");
           stage.addChild(this.animation);
         }
@@ -110,7 +113,9 @@
       }
 
       //Класс игрок
-      function Player(){
+      function Player(x, y){
+        x = x || 0;
+        y = y || 0;
         this.speed = 3;
 
         this.animation = null;
@@ -132,6 +137,7 @@
 
           var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
+          this.moveTo(x, y);
           this.animate("run");
           stage.addChild(this.animation);
         }
@@ -178,7 +184,7 @@
 
         //firstly draw map on the bottom layers
         gMap = new TILEDMap();
-        gMap.load('testMap1');
+        gMap.load('testMap2');
         gMap.draw();
 
 
@@ -191,10 +197,11 @@
         
         player = new Player();
 
+        /*
         for(i = 0; i < 10; i++){
           var z = new Zombie();
           z.moveTo(Math.random() * WIDTH, Math.random() * HEIGHT);
-        }
+        }*/
 
         player.animation.x = WIDTH / 2;
         player.animation.y = HEIGHT / 2;
@@ -264,11 +271,43 @@
         }
       }
 
+
+      //Передаем туда структуру с информацией о позиции, времени первого спауна, количестве спанов      
+      function zombieSpawner(data){
+        this.spawnDelay = data.properties.delay;
+        this.startTimeMs = data.properties.startTimeMs;
+        this.spawnNumber = data.properties.number;
+
+        this.nextSpawnTime = this.startTimeMs;
+
+        this.x = data.x;
+        this.y = data.y;
+
+        this.spawnHandler = function(){
+
+        }
+        var SZ = this;
+        createjs.Ticker.addEventListener("tick", function(event){
+          SZ.nextSpawnTime  -= event.delta;
+
+          if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
+            var z = new Zombie(SZ.x, SZ.y); 
+            SZ.spawnNumber--;
+            SZ.nextSpawnTime = SZ.spawnDelay;
+          }
+        });
+      }
       //Класс многослойной карты из тайлов
       var TILEDMap = function(){
           // This is where we store the full parsed
           // JSON of the map.json file.
           this.currMapData = null;
+
+          //Array of obstacle rectangles
+          this.obstacles = [];
+
+          //Zombie spawn object
+          this.zombSpawners = [];
 
           // tilesets stores each individual tileset
           // from the map.json's 'tilesets' Array.
@@ -334,7 +373,7 @@
               this.pixelSize.x = this.numXTiles * this.tileSize.x;
               this.pixelSize.y = this.numYTiles * this.tileSize.y;
 
-              // Loop through 'map.tilesets', an Array...
+              // Loop through 'map.tilesets', an Array...              
               for(var i = 0; i < map.tilesets.length; i++) {
                   //Load image from resources
                   var img = resources[map.tilesets[i].name];
@@ -408,8 +447,6 @@
               // we can skip to the next one.
               var tile = 0;
 
-              console.log(this.tilesets);
-
               for(tile = this.tilesets.length - 1; tile >= 0; tile--) {
                   if(this.tilesets[tile].firstgid <= tileIndex) break;
               }
@@ -453,47 +490,61 @@
           //-----------------------------------------
           // Draws all of the map data
           this.draw = function () {
-              // First, we need to check if the map data has
-              // already finished loading...
-
-              // ...Now, for every single layer in the 'layers' Array
+              // For every single layer in the 'layers' Array
               // of 'currMapData'...
               for(var layerIdx = 0; layerIdx < this.currMapData.layers.length; layerIdx++) {
-                  // Check if the 'type' of the layer is "tilelayer". If it isn't, we don't
-                  // care about drawing it...
-                  if(this.currMapData.layers[layerIdx].type != "tilelayer") continue;
+                  //Если слой тайлов, то рисуем, если слой объектов - расставляем на карте
+                  if(this.currMapData.layers[layerIdx].type == "tilelayer"){                
+                    // ...Grab the 'data' Array of the given layer...
+                    var dat = this.currMapData.layers[layerIdx].data;
 
-                  // ...Grab the 'data' Array of the given layer...
-                  var dat = this.currMapData.layers[layerIdx].data;
+                    var layerName = this.currMapData.layers[layerIdx].name;
 
-                  // ...For each tileID in the 'data' Array...
-                  for(var tileIDX = 0; tileIDX < dat.length; tileIDX++) {
-                      // ...Check if that tileID is 0. Remember, we don't draw
-                      // draw those, so we can skip processing them...
-                      var tID = dat[tileIDX];
-                      if(tID === 0) continue;
+                    // ...For each tileID in the 'data' Array...
+                    for(var tileIDX = 0; tileIDX < dat.length; tileIDX++) {
 
-                      // ...If the tileID is not 0, then we grab the
-                      // packet data using getTilePacket.
-                      var tPKT = this.getTilePacket(tID);
+                        // ...Check if that tileID is 0. Remember, we don't draw
+                        // draw those, so we can skip processing them...
+                        var tID = dat[tileIDX];
+                        if(tID === 0) continue;                      
+                        // ...If the tileID is not 0, then we grab the
+                        // packet data using getTilePacket.
+                        var tPKT = this.getTilePacket(tID);
 
-                      // Now we need to calculate the (x,y) position we want to draw
-                      // to in our game world.
-                      //
-                      // We've performed a similar calculation in 'getTilePacket',
-                      // think about how to calculate this based on the tile id and
-                      // various tile properties that our TILEDMapClass has.
+                        // Now we need to calculate the (x,y) position we want to draw
+                        // to in our game world.
+                        //
+                        // We've performed a similar calculation in 'getTilePacket',
+                        // think about how to calculate this based on the tile id and
+                        // various tile properties that our TILEDMapClass has.
 
-                      var dx = Math.floor(tileIDX % this.numXTiles) * this.tileSize.x;
-                      var dy = Math.floor(tileIDX / this.numXTiles) * this.tileSize.y;
+                        var dx = Math.floor(tileIDX % this.numXTiles) * this.tileSize.x;
+                        var dy = Math.floor(tileIDX / this.numXTiles) * this.tileSize.y;
 
-                      // Now, we're finally drawing the map to our canvas!
 
-                      var b = new createjs.Bitmap(tPKT.img);
-                      b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, this.tileSize.x, this.tileSize.y);
-                      b.x = dx;
-                      b.y = dy;
-                      stage.addChild(b);                    
+
+                        // avoid drawing obstacle tiles
+                        if(layerName != "obstacles"){
+                          // Now, we're finally drawing the map to our canvas!
+
+                          var b = new createjs.Bitmap(tPKT.img);
+                          b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, this.tileSize.x, this.tileSize.y);
+                          b.x = dx;
+                          b.y = dy;
+                          stage.addChild(b);   
+                        }else{ 
+                          // Add obstacle to array
+                          //var r = createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);
+                          //this.obstacles.push(r);
+                        }
+                    }
+                  }
+                  if(this.currMapData.layers[layerIdx].type == "objectgroup"){ 
+                    var data = this.currMapData.layers[layerIdx].objects;
+                    for (var i = data.length - 1; i >= 0; i--) {
+                      if(data[i].type == "zombSpawn")
+                        var spawner = new zombieSpawner(data[i]);
+                    };
                   }
               }
           }

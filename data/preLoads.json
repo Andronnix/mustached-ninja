@@ -12,16 +12,24 @@
 		"src" : "data\\hero.json"
 	},
 	{
-		"name" : "testMap1",
-		"src" : "data\\testMap1.json"
-	},	
-	{
 		"name" : "zombieJSON",
 		"src" : "data\\zombie.json"
 	},
 	{
 		"name" : "city",
 		"src" : "images\\city.png"
+	},
+	{
+		"name" : "obstacle",
+		"src" : "images\\obstacle.png"
+	},
+	{
+		"name" : "testMap1",
+		"src" : "data\\testMap1.json"
+	},		
+	{
+		"name" : "testMap2",
+		"src" : "data\\testMap2.json"
 	}	
 
 ]

@@ -26,6 +26,7 @@
 
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
+      var DEBUG = false;    
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
@@ -77,53 +78,57 @@
             var x3 = obst[i].x;
             var x4 = obst[i].x + obst[i].width;
 
-            if(x2 < x3 || x4 < x1) continue; //All is ok, no intersections
-
-            if(x1 < x3){ //x1 x3 x2 x4
-              intersect.x = x3;
-              intersect.w = x2 - x3;
-            }else if(x2 < x4){ //x3 x1 x2 x4
-              intersect.x = x1;
-              intersect.w = x2 - x1;
-            }else{ // x3 x1 x4 x2
-              intersect.x = x1;
-              intersect.w = x4 - x1;
-            }                          
-
             var y1 = y - this.hitRadius;
             var y2 = y + this.hitRadius;
             var y3 = obst[i].y;
             var y4 = obst[i].y + obst[i].height;
             if(y2 < y3 || y4 < y1) continue; //All is ok, no intersections
+            if(x2 < x3 || x4 < x1) continue; //All is ok, no intersections              
+
+            if(x1 < x3){ //x1 x3 x2 x4
+              intersect.x = x3;
+              intersect.w = x2 - x3;
+              x = x - intersect.w - 1;
+            }else if(x2 < x4){ //x3 x1 x2 x4
+              intersect.x = x3;
+              intersect.w = x2 - x3;
+              x = x - intersect.w - 1;
+            }else{ // x3 x1 x4 x2
+              intersect.x = x1;
+              intersect.w = x4 - x1;
+              x = x + intersect.w + 1;
+            }                            
+
 
             if(y1 < y3){ //y1 y3 y2 y4
               intersect.y = y3;
               intersect.h = y2 - y3;
+              y = y - intersect.h - 1;
             }else if(y2 < y4){ //y3 y1 y2 y4
-              intersect.y = y1;
-              intersect.h = y2 - y1;
+              intersect.y = y3;
+              intersect.h = y2 - y3;
+              y = y - intersect.h - 1;
             }else{ // y3 y1 y4 y2
               intersect.y = y1;
               intersect.h = y4 - y1;
-            }                                  
+              y = y + intersect.h + 1;
+            }                                                   
 
             if(intersect.w > intersect.h){
-              x = this.animation.x - intersect.w;
-              y = this.animation.y;
+              x = this.animation.x;              
             }else{
-              x = this.animation.x;
-              y = this.animation.y - intersect.h;
-            }
-
-            //Intersection, just return this time;
-
+              y = this.animation.y;
+            }            
+            break;
           }
-
+          
           this.animation.x = x;
           this.animation.y = y;
 
-          this.hitBox.x = x;// - this.hitRadius;
-          this.hitBox.y = y;// - this.hitRadius;
+          if(DEBUG){
+            this.hitBox.x = x;
+            this.hitBox.y = y;
+          }
         }
 
         this.move = function(dx, dy){
@@ -138,12 +143,14 @@
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
           this.hitRadius = r.hitRadius;
-          console.log(this.hitRadius);
-          this.hitBox = new createjs.Shape();
-          this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
-          this.hitBox.x = x;
-          this.hitBox.y = y;
-          stage.addChild(this.hitBox);
+          
+          if(DEBUG){
+            this.hitBox = new createjs.Shape();
+            this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
+            this.hitBox.x = x;
+            this.hitBox.y = y;
+            stage.addChild(this.hitBox);
+          }
 
 
           var ss = new createjs.SpriteSheet(r);             
@@ -184,14 +191,81 @@
         this.speed = 3;
 
         this.animation = null;
+        this.hitRadius = 0;
+        this.hitBox = null;
 
         this.moveTo = function(x, y){
-          this.animation.x = x;
-          this.animation.y = y;
+          
+          var obst = gMap.obstacles;    
+          var intersect0 = {x: 0, y: 0, w: 0, h: 0, xt: 0, yt:0};
+
+          for(var i = 0; i < obst.length; i++){
+            var xt = x, yt = y;
+            var intersect = {x: 0, y: 0, w: 0, h: 0, xt:0, yt:0}
+
+            var x1 = x - this.hitRadius;
+            var x2 = x + this.hitRadius;
+            var x3 = obst[i].x;
+            var x4 = obst[i].x + obst[i].width;
+
+            var y1 = y - this.hitRadius;
+            var y2 = y + this.hitRadius;
+            var y3 = obst[i].y;
+            var y4 = obst[i].y + obst[i].height;
+            if(y2 < y3 || y4 < y1) continue; //All is ok, no intersections
+            if(x2 < x3 || x4 < x1) continue; //All is ok, no intersections              
+
+            if(x1 < x3){ //x1 x3 x2 x4
+              intersect.x = x3;
+              intersect.w = x2 - x3;
+              xt = x - intersect.w - 1;
+            }else if(x2 < x4){ //x3 x1 x2 x4
+              intersect.x = x3;
+              intersect.w = x2 - x3;
+              xt = x - intersect.w - 1;
+            }else{ // x3 x1 x4 x2
+              intersect.x = x1;
+              intersect.w = x4 - x1;
+              xt = x + intersect.w + 1;
+            }                            
+
+
+            if(y1 < y3){ //y1 y3 y2 y4
+              intersect.y = y3;
+              intersect.h = y2 - y3;
+              yt = y - intersect.h - 1;
+            }else if(y2 < y4){ //y3 y1 y2 y4
+              intersect.y = y3;
+              intersect.h = y2 - y3;
+              yt = y - intersect.h - 1;
+            }else{ // y3 y1 y4 y2
+              intersect.y = y1;
+              intersect.h = y4 - y1;
+              yt = y + intersect.h + 1;
+            }                                                   
+            intersect.xt = xt;
+            intersect.yt = yt;
+            
+            if(intersect0.w * intersect0.h < intersect.w * intersect.h) intersect0 = intersect;
+          }
+
+            if(intersect0.w > intersect0.h){
+              intersect0.xt = x;
+            }else{
+              intersect0.yt = y;
+            }
+
+          
+          this.animation.x = intersect0.xt;
+          this.animation.y = intersect0.yt;
+
+          if(DEBUG){
+            this.hitBox.x = this.animation.x;
+            this.hitBox.y = this.animation.y;
+          }
         }
         this.move = function(dx, dy){
-          this.animation.x += dx;
-          this.animation.y += dy;
+          this.moveTo(this.animation.x + dx,this.animation.y + dy);
         }
         this.rotate = function(alpha){
           this.animation.rotation = alpha;
@@ -199,11 +273,23 @@
         this.loadJSON = function(data){
           var r = resources["heroJSON"];
           r.images = [resources["hero"]];
+          this.hitRadius = r.hitRadius;
 
           var ss = new createjs.SpriteSheet(r);             
-          this.animation = new createjs.BitmapAnimation(ss);   
-          this.moveTo(x, y);
-          this.animate("run");
+          this.animation = new createjs.BitmapAnimation(ss); 
+          this.animation.x = x;
+          this.animation.y = y;
+          this.animate("stay");
+
+
+          if(DEBUG){
+            this.hitBox = new createjs.Shape();
+            this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
+            this.hitBox.x = x;
+            this.hitBox.y = y;
+            stage.addChild(this.hitBox);
+          }
+
           stage.addChild(this.animation);
         }
         this.animate = function(arg){
@@ -252,25 +338,13 @@
         gMap.load('testMap2');
         gMap.draw();
 
+        if(DEBUG){
+          DEBUG_FIELD = new createjs.Text("Test");
+          DEBUG_SHAPE = new createjs.Shape();
 
-        DEBUG_FIELD = new createjs.Text("Test");
-        DEBUG_SHAPE = new createjs.Shape();
-
-        DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
-        stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
-		
-        
-        player = new Player();
-
-        /*
-        for(i = 0; i < 10; i++){
-          var z = new Zombie();
-          z.moveTo(Math.random() * WIDTH, Math.random() * HEIGHT);
-        }*/
-
-        player.animation.x = WIDTH / 2;
-        player.animation.y = HEIGHT / 2;
-
+          DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
+          stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
+		    }        
 
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(){
@@ -374,6 +448,7 @@
 
           //Zombie spawn object
           this.zombSpawners = [];
+          this.playerSpawn = null;
 
           // tilesets stores each individual tileset
           // from the map.json's 'tilesets' Array.
@@ -603,18 +678,25 @@
                           var r = new createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);                          
                           this.obstacles.push(r);
 
-
-                          var ddd = new createjs.Shape();
-                          ddd.graphics.s("#f00").r(r.x, r.y, r.width, r.height);
-                          stage.addChild(ddd);
+                          if(DEBUG){
+                            var ddd = new createjs.Shape();
+                            ddd.graphics.s("#f00").r(r.x, r.y, r.width, r.height);                          
+                            stage.addChild(ddd);
+                          }
                         }
                     }
                   }
                   if(this.currMapData.layers[layerIdx].type == "objectgroup"){ 
+
                     var data = this.currMapData.layers[layerIdx].objects;
+
                     for (var i = data.length - 1; i >= 0; i--) {
+
                       if(data[i].type == "zombSpawn")
                         var spawner = new zombieSpawner(data[i]);
+
+                      if(data[i].type == "playerSpawn")
+                        player = new Player(data[i].x, data[i].y);                      
                     };
                   }
               }

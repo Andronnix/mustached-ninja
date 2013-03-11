@@ -73,6 +73,22 @@
                  "width":0,
                  "x":256,
                  "y":288
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "name":"spawnPoint",
+                 "properties":
+                    {
+                     "delay":"0",
+                     "number":"1",
+                     "startTimeMs":"0"
+                    },
+                 "type":"playerSpawn",
+                 "visible":true,
+                 "width":0,
+                 "x":544,
+                 "y":288
                 }],
          "opacity":1,
          "type":"objectgroup",

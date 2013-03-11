@@ -26,11 +26,14 @@
 
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
+	  
+	  var SHOOT_TIME = 0;
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
       var fwdHeld;      //is the user holding a forward command
       var bwdHeld;      //is the user holding a backward command
+	  var shootHeld;		//is the user holding a shoot command
 
       var body = document.getElementById("body");
       var stage;
@@ -211,6 +214,30 @@
         }
         this.loadJSON();
       }
+	  
+	  function shoot(x, y, angle, stage){
+		
+		if (SHOOT_TIME < 20)return; else SHOOT_TIME = 0;
+		var length = 80 + Math.random()*50;
+		var s = new createjs.Shape();
+		var dx = x + 17*Math.cos(angle + 0.49);
+		var dy = y + 17*Math.sin(angle + 0.49);
+		var da = Math.atan2(stage.mouseY - dy, stage.mouseX - dx);
+		var dr = Math.random()*15;
+		s.graphics.s("#F0E68C").mt(dx + (10+dr)*Math.cos(da), dy + (10+dr)*Math.sin(da));
+		//s.graphics.s("#F0E68C").mt(dx, dy);
+		s.graphics.lt(x + length*Math.cos(angle), y + length*Math.sin(angle));
+		stage.addChild(s);
+		var t = 0;
+		//я знаю, что здесь МОЖНО сделать лучше, но не знаю как
+		createjs.Ticker.addEventListener("tick", function(event){
+			if (t > 2){
+				t = 0;
+				stage.removeChild(s);
+			}else t++;
+		});
+	  }
+	  
 
       //Загрузка всех ресурсов, и запуск функции init()
       function load(){
@@ -290,6 +317,9 @@
           if(rtHeld) v.x = player.speed;
           if(fwdHeld) v.y = - player.speed;
           if(bwdHeld) v.y = player.speed;
+		  if(shootHeld) shoot(player.animation.x, player.animation.y, a - Math.PI/2, stage);
+		  
+		  SHOOT_TIME++;
 
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");

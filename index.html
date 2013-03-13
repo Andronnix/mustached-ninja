@@ -340,7 +340,7 @@
 
         //firstly draw map on the bottom layers
         gMap = new TILEDMap();
-        gMap.load('testMap2');
+        gMap.load("testMap4");
         gMap.draw();
 
         if(DEBUG){
@@ -378,6 +378,22 @@
           }		
 
           player.move(v.x, v.y);
+
+          var mapMove = {dx:0, dy:0};
+          var mvC = 0.2; // Константа, поределяющая перемещение карты
+
+          if(player.animation.x < WIDTH * mvC && gMap.position.x < 0)
+            mapMove.dx = -v.x;
+          if(player.animation.y < HEIGHT * mvC && gMap.position.y < 0)
+            mapMove.dy = -v.y;
+
+          if(player.animation.x > WIDTH * (1 - mvC))
+            mapMove.dx = -v.x;
+          if(player.animation.y > HEIGHT * (1 - mvC))
+            mapMove.dy = -v.y;
+          if(Math.abs(mapMove.dx) + Math.abs(mapMove.dy) > 0){
+            gMap.move(mapMove.dx, mapMove.dy);
+          }
         }
 
       }
@@ -436,6 +452,7 @@
 
           if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
             var z = new Zombie(SZ.x, SZ.y); 
+            gMap.zombies.push(z);
             SZ.spawnNumber--;
             SZ.nextSpawnTime = SZ.spawnDelay;
           }
@@ -453,6 +470,9 @@
 
           //Zombie spawn object
           this.zombSpawners = [];
+
+          //Zombies
+          this.zombies = [];
           this.playerSpawn = null;
 
           // tilesets stores each individual tileset
@@ -461,6 +481,9 @@
           // Array is explained below in the
           // parseAtlasDefinition method.
           this.tilesets = [];
+
+          //creaeteJS bitmaps array
+          this.tiles = [];
 
           // This is where we store the width and
           // height of the map in tiles. This is
@@ -495,6 +518,8 @@
               "x": 64,
               "y": 64
           };
+
+          this.position = {x: 0, y: 0};
 
           this.load = function (mapName) {      
               this.currMapData = resources[mapName];
@@ -677,7 +702,8 @@
                           b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, this.tileSize.x, this.tileSize.y);
                           b.x = dx;
                           b.y = dy;
-                          stage.addChild(b);   
+                          stage.addChild(b);  
+                          this.tiles.push(b); 
                         }else{ 
                           // Add obstacle to array
                           var r = new createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);                          
@@ -697,8 +723,10 @@
 
                     for (var i = data.length - 1; i >= 0; i--) {
 
-                      if(data[i].type == "zombSpawn")
+                      if(data[i].type == "zombSpawn"){
                         var spawner = new zombieSpawner(data[i]);
+                        this.zombSpawners.push(spawner);
+                      }
 
                       if(data[i].type == "playerSpawn")
                         player = new Player(data[i].x, data[i].y);                      
@@ -707,6 +735,44 @@
               }
           }
 
+
+          //Подвинем все тайлы, всех зомбей, все спаунеры зомбей
+
+          this.move = function (dx, dy){
+            dx = dx || 0;
+            dy = dy || 0;
+            //Избегаем излишних движений
+            if(this.position.x + dx > 0) dx = - this.position.x;            
+            if(this.position.y + dy > 0) dy = - this.position.y;
+
+            var i = 0;
+
+            var tilesArr = this.tiles;
+            for (i = tilesArr.length - 1; i >= 0; i--) {
+              tilesArr[i].x += dx;
+              tilesArr[i].y += dy;
+            };
+
+            var obstArr = this.obstacles;
+            for (i = obstArr.length - 1; i >= 0; i--) {
+              obstArr[i].x += dx;
+              obstArr[i].y += dy;
+            };
+
+            for (i = this.zombies.length - 1; i >= 0; i--) {
+              this.zombies[i].move(dx,dy);
+            };
+
+            var zSpawn = this.zombSpawners;
+            for (i = zSpawn.length - 1; i >= 0; i--) {
+              zSpawn[i].x += dx;
+              zSpawn[i].y += dy;
+            };
+
+
+            this.position.x +=dx;
+            this.position.y +=dy;
+          }
       };
     </script>  
   </BODY>

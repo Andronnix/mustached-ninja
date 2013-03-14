@@ -24,12 +24,19 @@
 		"src" : "images\\obstacle.png"
 	},
 	{
+		"name" : "shot",
+		"src" : "images\\shot.png"
+	},	
+	{
+		"name" : "shotJSON",
+		"src" : "data\\shot.json"
+	},	
+	{
 		"name" : "testMap1",
 		"src" : "data\\testMap1.json"
 	},		
 	{
 		"name" : "testMap2",
 		"src" : "data\\testMap2.json"
-	}	
-
+	}
 ]

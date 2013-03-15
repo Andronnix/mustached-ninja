@@ -260,6 +260,16 @@
 	  function shoot(x, y, angle, stage, recharge){
 		
 		if (SHOOT_TIME < recharge)return false; else SHOOT_TIME = 0;
+		//(y1 – y2)x + (x2 – x1)y + (x1y2 – x2y1) = 0
+		//var k = Math.tan(angle + Math.PI);
+		var dx = x + 17*Math.cos(angle + 0.49);
+		var dy = y + 17*Math.sin(angle + 0.49);
+		var kA = dy - stage.mouseY;
+		var kB = stage.mouseX - dx;
+		var kC = dx*stage.mouseY - stage.mouseX*dy;
+		//var i = new Zombie();
+		for (var i in stage.children)console.log(stage.children[i]);
+		
 		
 		//не убирай коменты - вдруг еще пригодится=)
 		//как минимум здесь расчет правильного угла для стрельбы...
@@ -327,7 +337,7 @@
         gMap.draw();
 
 
-        DEBUG_FIELD = new createjs.Text("Test");
+        DEBUG_FIELD = new createjs.Text(null);
         DEBUG_SHAPE = new createjs.Shape();
 
         DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
@@ -374,7 +384,7 @@
 		  }
 		  
 		  SHOOT_TIME++;
-
+		  DEBUG_FIELD.text = Math.tan(a);
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");
           }else{

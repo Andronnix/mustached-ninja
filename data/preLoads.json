@@ -38,5 +38,13 @@
 	{
 		"name" : "testMap2",
 		"src" : "data\\testMap2.json"
+	},		
+	{
+		"name" : "testMap3",
+		"src" : "data\\testMap3.json"
+	},		
+	{
+		"name" : "testMap4",
+		"src" : "data\\testMap4.json"
 	}
 ]

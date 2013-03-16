@@ -26,10 +26,11 @@
 
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
+      var DEBUG = false;    
 	  
 	  var SHOOT_TIME = 0;
 	  
-	  var PISTOL_RECHARGE = 40;
+	  var PISTOL_RECHARGE = 10;
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
@@ -60,6 +61,54 @@
           xhr.send();
       }
 
+      //Возвращает пересечение прямоугольников как прямоугольник
+      function rectIntersection(r1, r2){
+        var x1 = r1.x, y1 = r1.y;
+        var x2 = r1.x + r1.w, y2 = r1.y + r1.h;
+
+        var x3 = r2.x, y3 = r2.y;
+        var x4 = r2.x + r2.w, y4 = r2.y + r2.h;
+
+        var xt = 0, yt = 0;
+        var intersect = {x: 0, y: 0, w: 0, h: 0, xt:0, yt:0}
+
+        if(y2 < y3 || y4 < y1) return intersect; //All is ok, no intersections
+        if(x2 < x3 || x4 < x1) return intersect; //All is ok, no intersections              
+
+        if(x1 < x3){ //x1 x3 x2 x4
+          intersect.x = x3;
+          intersect.w = x2 - x3;
+          xt = - intersect.w - 1;
+        }else if(x2 < x4){ //x3 x1 x2 x4
+          intersect.x = x3;
+          intersect.w = x2 - x3;
+          xt = - intersect.w - 1;
+        }else{ // x3 x1 x4 x2
+          intersect.x = x1;
+          intersect.w = x4 - x1;
+          xt = intersect.w + 1;
+        }                            
+
+
+        if(y1 < y3){ //y1 y3 y2 y4
+          intersect.y = y3;
+          intersect.h = y2 - y3;
+          yt = - intersect.h - 1;
+        }else if(y2 < y4){ //y3 y1 y2 y4
+          intersect.y = y3;
+          intersect.h = y2 - y3;
+          yt = - intersect.h - 1;
+        }else{ // y3 y1 y4 y2
+          intersect.y = y1;
+          intersect.h = y4 - y1;
+          yt = intersect.h + 1;
+        }                                                   
+        intersect.xt = xt;
+        intersect.yt = yt;
+
+        return intersect;
+      }
+
       //Класс зомби
       function Zombie(x, y){
         x = x || 0;
@@ -72,63 +121,44 @@
 
         //безопасно двигаем, проверяя на столкновения        
         this.moveTo = function(x, y){
-          
-          var obst = gMap.obstacles;          
+
+          var obst = gMap.obstacles;    
+          var intersect0 = {x: 0, y: 0, w: 0, h: 0, xt: 0, yt:0 };
+
           for(var i = 0; i < obst.length; i++){
-            var intersect = {x: 0, y: 0, w: 0, h: 0}
+            var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
+            var r2 = {x: obst[i].x, y: obst[i].y, w: obst[i].width, h: obst[i].height};
 
-            var x1 = x - this.hitRadius;
-            var x2 = x + this.hitRadius;
-            var x3 = obst[i].x;
-            var x4 = obst[i].x + obst[i].width;
+            var intersect = rectIntersection(r1, r2);
 
-            if(x2 < x3 || x4 < x1) continue; //All is ok, no intersections
-
-            if(x1 < x3){ //x1 x3 x2 x4
-              intersect.x = x3;
-              intersect.w = x2 - x3;
-            }else if(x2 < x4){ //x3 x1 x2 x4
-              intersect.x = x1;
-              intersect.w = x2 - x1;
-            }else{ // x3 x1 x4 x2
-              intersect.x = x1;
-              intersect.w = x4 - x1;
-            }                          
-
-            var y1 = y - this.hitRadius;
-            var y2 = y + this.hitRadius;
-            var y3 = obst[i].y;
-            var y4 = obst[i].y + obst[i].height;
-            if(y2 < y3 || y4 < y1) continue; //All is ok, no intersections
-
-            if(y1 < y3){ //y1 y3 y2 y4
-              intersect.y = y3;
-              intersect.h = y2 - y3;
-            }else if(y2 < y4){ //y3 y1 y2 y4
-              intersect.y = y1;
-              intersect.h = y2 - y1;
-            }else{ // y3 y1 y4 y2
-              intersect.y = y1;
-              intersect.h = y4 - y1;
-            }                                  
-
-            if(intersect.w > intersect.h){
-              x = this.animation.x - intersect.w;
-              y = this.animation.y;
-            }else{
-              x = this.animation.x;
-              y = this.animation.y - intersect.h;
-            }
-
-            //Intersection, just return this time;
-
+            if(intersect0.w * intersect0.h < intersect.w * intersect.h) intersect0 = intersect;
           }
 
-          this.animation.x = x;
-          this.animation.y = y;
+          var zomb = gMap.zombies;
+          for(var i = 0; i < zomb.length; i++){
+            if(zomb[i] == this) continue;
+            var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
+            var r2 = {x: zomb[i].animation.x - zomb[i].hitRadius, y: zomb[i].animation.y - zomb[i].hitRadius,
+                      w: 2 * zomb[i].hitRadius, h: 2 * zomb[i].hitRadius};
 
-          this.hitBox.x = x;// - this.hitRadius;
-          this.hitBox.y = y;// - this.hitRadius;
+            var intersect = rectIntersection(r1, r2);
+
+            if(intersect0.w * intersect0.h < intersect.w * intersect.h) intersect0 = intersect;
+          }
+
+          if(intersect0.w > intersect0.h){
+            intersect0.xt = 0;
+          }else{
+            intersect0.yt = 0;
+          }
+
+          this.animation.x = x + intersect0.xt;
+          this.animation.y = y + intersect0.yt;
+
+          if(DEBUG){
+            this.hitBox.x = this.animation.x;
+            this.hitBox.y = this.animation.y;
+          }
         }
 
         this.move = function(dx, dy){
@@ -143,12 +173,14 @@
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
           this.hitRadius = r.hitRadius;
-          console.log(this.hitRadius);
-          this.hitBox = new createjs.Shape();
-          this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
-          this.hitBox.x = x;
-          this.hitBox.y = y;
-          stage.addChild(this.hitBox);
+          
+          if(DEBUG){
+            this.hitBox = new createjs.Shape();
+            this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
+            this.hitBox.x = x;
+            this.hitBox.y = y;
+            stage.addChild(this.hitBox);
+          }
 
 
           var ss = new createjs.SpriteSheet(r);             
@@ -190,28 +222,56 @@
 
         this.animation = null;
 		this.shotAnimation = null;
+        this.hitRadius = 0;
+        this.hitBox = null;
 
         this.moveTo = function(x, y){
-          this.animation.x = x;
-          this.animation.y = y;
+          
+          var obst = gMap.obstacles;    
 		  this.shotAnimation.x = x + 17*Math.cos(this.animation.rotation*Math.PI/180 + 0.49);
 		  this.shotAnimation.y = y + 17*Math.sin(this.animation.rotation*Math.PI/180 + 0.49);
-		  console.log(this.animation.x);
-		  console.log(this.shotAnimation.x);
+		  /*console.log(this.animation.x);
+		  console.log(this.shotAnimation.x);*/
+          var intersect0 = {x: 0, y: 0, w: 0, h: 0, xt: 0, yt:0 };
+
+          for(var i = 0; i < obst.length; i++){
+            var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
+            var r2 = {x: obst[i].x, y: obst[i].y, w: obst[i].width, h: obst[i].height};
+
+            var intersect = rectIntersection(r1, r2);
+
+            if(intersect0.w * intersect0.h < intersect.w * intersect.h) intersect0 = intersect;
+          }
+
+          if(intersect0.w > intersect0.h){
+            intersect0.xt = 0;
+          }else{
+            intersect0.yt = 0;
+          }
+          
+          this.animation.x = x + intersect0.xt;
+          this.animation.y = y + intersect0.yt;
+		  this.shotAnimation.x = x + 23*Math.cos(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.xt;
+		  this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.yt;		  
+
+          if(DEBUG){
+            this.hitBox.x = this.animation.x;
+            this.hitBox.y = this.animation.y;
+          }
         }
         this.move = function(dx, dy){
-          this.animation.x += dx;
-          this.animation.y += dy;
-		  this.shotAnimation.x += dx;
-		  this.shotAnimation.y += dy;
+          this.moveTo(this.animation.x + dx,this.animation.y + dy);
+		  /*this.shotAnimation.x += dx;
+		  this.shotAnimation.y += dy;*/
         }
-        this.rotate = function(alpha){
+        /*this.rotate = function(alpha){
           this.animation.rotation = alpha;
 		  this.shotAnimation.rotation = alpha;
-        }
+        }*/
         this.loadJSON = function(data){
           var r = resources["heroJSON"];
           r.images = [resources["hero"]];
+          this.hitRadius = r.hitRadius;
 		  
 		  //addings
 		/*var dx = x + 17*Math.cos(angle + 0.49);
@@ -242,9 +302,20 @@
 		  //end
 
           var ss = new createjs.SpriteSheet(r);             
-          this.animation = new createjs.BitmapAnimation(ss);   
-          this.moveTo(x, y);
-          this.animate("run");
+          this.animation = new createjs.BitmapAnimation(ss); 
+          this.animation.x = x;
+          this.animation.y = y;
+          this.animate("stay");
+
+
+          if(DEBUG){
+            this.hitBox = new createjs.Shape();
+            this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
+            this.hitBox.x = x;
+            this.hitBox.y = y;
+            stage.addChild(this.hitBox);
+          }
+
           stage.addChild(this.animation);
 		  stage.addChild(this.shotAnimation);
         }
@@ -333,29 +404,20 @@
 
         //firstly draw map on the bottom layers
         gMap = new TILEDMap();
-        gMap.load('testMap2');
+        gMap.load("testMap4");
         gMap.draw();
 
+        if(DEBUG){
+          DEBUG_FIELD = new createjs.Text("Test");
+          DEBUG_SHAPE = new createjs.Shape();
 
-        DEBUG_FIELD = new createjs.Text(null);
-        DEBUG_SHAPE = new createjs.Shape();
-
-        DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
-        stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
-		
-        
-        player = new Player();
-
-        /*
-        for(i = 0; i < 10; i++){
-          var z = new Zombie();
-          z.moveTo(Math.random() * WIDTH, Math.random() * HEIGHT);
-        }*/
-		player.moveTo(WIDTH / 2, HEIGHT / 2);
+          DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
+          stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
+		    }        
+//CHECK it
+		player.moveTo(WIDTH / 2, HEIGHT / 2 - 40);
         //player.animation.x = WIDTH / 2;
         //splayer.animation.y = HEIGHT / 2;
-
-
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(){
           stage.update();
@@ -384,7 +446,7 @@
 		  }
 		  
 		  SHOOT_TIME++;
-		  DEBUG_FIELD.text = Math.tan(a);
+		  //DEBUG_FIELD.text = Math.tan(a);
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");
           }else{
@@ -393,6 +455,22 @@
           }		
 
           player.move(v.x, v.y);
+
+          var mapMove = {dx:0, dy:0};
+          var mvC = 0.3; // Константа, поределяющая перемещение карты
+
+          if(player.animation.x < WIDTH * mvC && gMap.position.x < 0)
+            mapMove.dx = -v.x;
+          if(player.animation.y < HEIGHT * mvC && gMap.position.y < 0)
+            mapMove.dy = -v.y;
+
+          if(player.animation.x > WIDTH * (1 - mvC))
+            mapMove.dx = -v.x;
+          if(player.animation.y > HEIGHT * (1 - mvC))
+            mapMove.dy = -v.y;
+          if(Math.abs(mapMove.dx) + Math.abs(mapMove.dy) > 0){
+            gMap.move(mapMove.dx, mapMove.dy);
+          }
         }
 
       }
@@ -451,6 +529,7 @@
 
           if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
             var z = new Zombie(SZ.x, SZ.y); 
+            gMap.zombies.push(z);
             SZ.spawnNumber--;
             SZ.nextSpawnTime = SZ.spawnDelay;
           }
@@ -469,12 +548,19 @@
           //Zombie spawn object
           this.zombSpawners = [];
 
+          //Zombies
+          this.zombies = [];
+          this.playerSpawn = null;
+
           // tilesets stores each individual tileset
           // from the map.json's 'tilesets' Array.
           // The structure of each entry of this
           // Array is explained below in the
           // parseAtlasDefinition method.
           this.tilesets = [];
+
+          //creaeteJS bitmaps array
+          this.tiles = [];
 
           // This is where we store the width and
           // height of the map in tiles. This is
@@ -509,6 +595,8 @@
               "x": 64,
               "y": 64
           };
+
+          this.position = {x: 0, y: 0};
 
           this.load = function (mapName) {      
               this.currMapData = resources[mapName];
@@ -691,29 +779,77 @@
                           b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, this.tileSize.x, this.tileSize.y);
                           b.x = dx;
                           b.y = dy;
-                          stage.addChild(b);   
+                          stage.addChild(b);  
+                          this.tiles.push(b); 
                         }else{ 
                           // Add obstacle to array
                           var r = new createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);                          
                           this.obstacles.push(r);
 
-
-                          var ddd = new createjs.Shape();
-                          ddd.graphics.s("#f00").r(r.x, r.y, r.width, r.height);
-                          stage.addChild(ddd);
+                          if(DEBUG){
+                            var ddd = new createjs.Shape();
+                            ddd.graphics.s("#f00").r(r.x, r.y, r.width, r.height);                          
+                            stage.addChild(ddd);
+                          }
                         }
                     }
                   }
                   if(this.currMapData.layers[layerIdx].type == "objectgroup"){ 
+
                     var data = this.currMapData.layers[layerIdx].objects;
+
                     for (var i = data.length - 1; i >= 0; i--) {
-                      if(data[i].type == "zombSpawn")
+
+                      if(data[i].type == "zombSpawn"){
                         var spawner = new zombieSpawner(data[i]);
+                        this.zombSpawners.push(spawner);
+                      }
+
+                      if(data[i].type == "playerSpawn")
+                        player = new Player(data[i].x, data[i].y);                      
                     };
                   }
               }
           }
 
+
+          //Подвинем все тайлы, всех зомбей, все спаунеры зомбей
+
+          this.move = function (dx, dy){
+            dx = dx || 0;
+            dy = dy || 0;
+            //Избегаем излишних движений
+            if(this.position.x + dx > 0) dx = - this.position.x;            
+            if(this.position.y + dy > 0) dy = - this.position.y;
+
+            var i = 0;
+
+            var tilesArr = this.tiles;
+            for (i = tilesArr.length - 1; i >= 0; i--) {
+              tilesArr[i].x += dx;
+              tilesArr[i].y += dy;
+            };
+
+            var obstArr = this.obstacles;
+            for (i = obstArr.length - 1; i >= 0; i--) {
+              obstArr[i].x += dx;
+              obstArr[i].y += dy;
+            };
+
+            for (i = this.zombies.length - 1; i >= 0; i--) {
+              this.zombies[i].move(dx,dy);
+            };
+
+            var zSpawn = this.zombSpawners;
+            for (i = zSpawn.length - 1; i >= 0; i--) {
+              zSpawn[i].x += dx;
+              zSpawn[i].y += dy;
+            };
+
+
+            this.position.x +=dx;
+            this.position.y +=dy;
+          }
       };
     </script>  
   </BODY>

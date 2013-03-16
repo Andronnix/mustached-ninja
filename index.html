@@ -27,16 +27,16 @@
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
       var DEBUG = false;    
-	  
-	  var SHOOT_TIME = 0;
-	  
-	  var PISTOL_RECHARGE = 10;
+    
+      var SHOOT_TIME = 0;
+    
+      var PISTOL_RECHARGE = 10;
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
       var fwdHeld;      //is the user holding a forward command
       var bwdHeld;      //is the user holding a backward command
-	  var shootHeld;		//is the user holding a shoot command
+      var shootHeld;    //is the user holding a shoot command
 
       var body = document.getElementById("body");
       var stage;
@@ -221,17 +221,16 @@
         this.speed = 3;
 
         this.animation = null;
-		this.shotAnimation = null;
+        this.shotAnimation = null;
         this.hitRadius = 0;
         this.hitBox = null;
 
         this.moveTo = function(x, y){
           
           var obst = gMap.obstacles;    
-		  this.shotAnimation.x = x + 17*Math.cos(this.animation.rotation*Math.PI/180 + 0.49);
-		  this.shotAnimation.y = y + 17*Math.sin(this.animation.rotation*Math.PI/180 + 0.49);
-		  /*console.log(this.animation.x);
-		  console.log(this.shotAnimation.x);*/
+          this.shotAnimation.x = x + 17*Math.cos(this.animation.rotation*Math.PI/180 + 0.49);
+          this.shotAnimation.y = y + 17*Math.sin(this.animation.rotation*Math.PI/180 + 0.49);
+
           var intersect0 = {x: 0, y: 0, w: 0, h: 0, xt: 0, yt:0 };
 
           for(var i = 0; i < obst.length; i++){
@@ -251,55 +250,29 @@
           
           this.animation.x = x + intersect0.xt;
           this.animation.y = y + intersect0.yt;
-		  this.shotAnimation.x = x + 23*Math.cos(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.xt;
-		  this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.yt;		  
+          this.shotAnimation.x = x + 23*Math.cos(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.xt;
+          this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.yt;      
 
           if(DEBUG){
             this.hitBox.x = this.animation.x;
             this.hitBox.y = this.animation.y;
           }
         }
+
         this.move = function(dx, dy){
           this.moveTo(this.animation.x + dx,this.animation.y + dy);
-		  /*this.shotAnimation.x += dx;
-		  this.shotAnimation.y += dy;*/
         }
-        /*this.rotate = function(alpha){
-          this.animation.rotation = alpha;
-		  this.shotAnimation.rotation = alpha;
-        }*/
+
         this.loadJSON = function(data){
           var r = resources["heroJSON"];
           r.images = [resources["hero"]];
           this.hitRadius = r.hitRadius;
-		  
-		  //addings
-		/*var dx = x + 17*Math.cos(angle + 0.49);
-		var dy = y + 17*Math.sin(angle + 0.49);
-		var da = Math.atan2(stage.mouseY - dy, stage.mouseX - dx);
-		var dr = Math.random()*15;*/
-		/*s.graphics.s("#F0E68C").mt(dx + (10+dr)*Math.cos(da), dy + (10+dr)*Math.sin(da));
-		//s.graphics.s("#F0E68C").mt(dx, dy);
-		s.graphics.lt(x + length*Math.cos(angle), y + length*Math.sin(angle));
-		stage.addChild(s);*/
-		console.log("shoot!");
-		//this.loadJSON = function(data){
-        var rs = resources["shotJSON"];
-        rs.images = [resources["shot"]];
-		console.log("load shot!");
-        //this.hitRadius = r.hitRadius;
-        /*this.animate = function(arg){
-          this.animation.gotoAndPlay(arg);    
-        }*/
-        var sh = new createjs.SpriteSheet(rs);             
-        this.shotAnimation = new createjs.BitmapAnimation(sh); 
-        //this.shotAnimation.x = dx;
-        //this.shotAnimation.y = dy;
-        //this.animateShot("s0");
-		//this.shotAnimation.rotation = 180 * (angle + Math.PI/2) / Math.PI;
-		  
-		  
-		  //end
+
+          var rs = resources["shotJSON"];
+          rs.images = [resources["shot"]];
+
+          var sh = new createjs.SpriteSheet(rs);             
+          this.shotAnimation = new createjs.BitmapAnimation(sh); 
 
           var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss); 
@@ -317,55 +290,55 @@
           }
 
           stage.addChild(this.animation);
-		  stage.addChild(this.shotAnimation);
+          stage.addChild(this.shotAnimation);
         }
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
         }
-		this.animateShot = function(arg){
-			this.shotAnimation.gotoAndPlay(arg);    
-		}
+        this.animateShot = function(arg){
+          this.shotAnimation.gotoAndPlay(arg);    
+        }
         this.loadJSON();
       }
-	  
-	  function shoot(x, y, angle, stage, recharge){
-		
-		if (SHOOT_TIME < recharge)return false; else SHOOT_TIME = 0;
-		//(y1 – y2)x + (x2 – x1)y + (x1y2 – x2y1) = 0
-		//var k = Math.tan(angle + Math.PI);
-		var dx = x + 17*Math.cos(angle + 0.49);
-		var dy = y + 17*Math.sin(angle + 0.49);
-		var kA = dy - stage.mouseY;
-		var kB = stage.mouseX - dx;
-		var kC = dx*stage.mouseY - stage.mouseX*dy;
-		//var i = new Zombie();
-		//for (var i in stage.children)console.log(stage.children[i]);
-		
-		
-		//не убирай коменты - вдруг еще пригодится=)
-		//как минимум здесь расчет правильного угла для стрельбы...
-		
-		/*var length = 80 + Math.random()*50;
-		var s = new createjs.Shape();
-		var dx = x + 17*Math.cos(angle + 0.49);
-		var dy = y + 17*Math.sin(angle + 0.49);
-		var da = Math.atan2(stage.mouseY - dy, stage.mouseX - dx);
-		var dr = Math.random()*15;
-		s.graphics.s("#808080").mt(dx + (10+dr)*Math.cos(da), dy + (10+dr)*Math.sin(da));
-		//s.graphics.s("#F0E68C").mt(dx, dy);
-		s.graphics.lt(x + length*Math.cos(angle), y + length*Math.sin(angle));
-		stage.addChild(s);
-		var t = 0;
-		//я знаю, что здесь МОЖНО сделать лучше, но не знаю как
-		createjs.Ticker.addEventListener("tick", function(event){
-			if (t > 3){
-				t = 0;
-				stage.removeChild(s);
-			}else t++;
-		});*/
-		return true;
-	  }
-	  
+    
+      function shoot(x, y, angle, stage, recharge){
+    
+        if (SHOOT_TIME < recharge)return false; else SHOOT_TIME = 0;
+        //(y1 – y2)x + (x2 – x1)y + (x1y2 – x2y1) = 0
+        //var k = Math.tan(angle + Math.PI);
+        var dx = x + 17*Math.cos(angle + 0.49);
+        var dy = y + 17*Math.sin(angle + 0.49);
+        var kA = dy - stage.mouseY;
+        var kB = stage.mouseX - dx;
+        var kC = dx*stage.mouseY - stage.mouseX*dy;
+        //var i = new Zombie();
+        //for (var i in stage.children)console.log(stage.children[i]);
+        
+        
+        //не убирай коменты - вдруг еще пригодится=)
+        //как минимум здесь расчет правильного угла для стрельбы...
+        
+        /*var length = 80 + Math.random()*50;
+        var s = new createjs.Shape();
+        var dx = x + 17*Math.cos(angle + 0.49);
+        var dy = y + 17*Math.sin(angle + 0.49);
+        var da = Math.atan2(stage.mouseY - dy, stage.mouseX - dx);
+        var dr = Math.random()*15;
+        s.graphics.s("#808080").mt(dx + (10+dr)*Math.cos(da), dy + (10+dr)*Math.sin(da));
+        //s.graphics.s("#F0E68C").mt(dx, dy);
+        s.graphics.lt(x + length*Math.cos(angle), y + length*Math.sin(angle));
+        stage.addChild(s);
+        var t = 0;
+        //я знаю, что здесь МОЖНО сделать лучше, но не знаю как
+        createjs.Ticker.addEventListener("tick", function(event){
+          if (t > 3){
+            t = 0;
+            stage.removeChild(s);
+          }else t++;
+        });*/
+        return true;
+      }
+    
 
       //Загрузка всех ресурсов, и запуск функции init()
       function load(){
@@ -413,9 +386,10 @@
 
           DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
           stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
-		    }        
-//CHECK it
-		player.moveTo(WIDTH / 2, HEIGHT / 2 - 40);
+        }        
+        
+        //CHECK it
+        player.moveTo(WIDTH / 2, HEIGHT / 2 - 40);
         //player.animation.x = WIDTH / 2;
         //splayer.animation.y = HEIGHT / 2;
         createjs.Ticker.setFPS(60);
@@ -429,9 +403,9 @@
 
           var a = Math.atan2(stage.mouseY - player.animation.y, stage.mouseX - player.animation.x) + Math.PI / 2;
           player.animation.rotation = 180 * a / Math.PI;
-		  player.shotAnimation.rotation = player.animation.rotation;
-		  player.shotAnimation.x = player.animation.x + 23*Math.cos(a - Math.PI/2 + 0.35);
-		  player.shotAnimation.y = player.animation.y + 23*Math.sin(a - Math.PI/2 + 0.35);
+          player.shotAnimation.rotation = player.animation.rotation;
+          player.shotAnimation.x = player.animation.x + 23*Math.cos(a - Math.PI/2 + 0.35);
+          player.shotAnimation.y = player.animation.y + 23*Math.sin(a - Math.PI/2 + 0.35);
 
           var v = {x:0, y:0};  // player speed vector
 
@@ -439,20 +413,20 @@
           if(rtHeld) v.x = player.speed;
           if(fwdHeld) v.y = - player.speed;
           if(bwdHeld) v.y = player.speed;
-		  if(shootHeld) {
-			if (shoot(player.animation.x, player.animation.y, a - Math.PI/2, stage, PISTOL_RECHARGE)){
-				player.animateShot("s0");
-			}
-		  }
-		  
-		  SHOOT_TIME++;
-		  //DEBUG_FIELD.text = Math.tan(a);
+          if(shootHeld) {
+            if (shoot(player.animation.x, player.animation.y, a - Math.PI/2, stage, PISTOL_RECHARGE)){
+              player.animateShot("s0");
+            }
+          }
+          
+          SHOOT_TIME++;
+
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");
           }else{
             if(player.animation.currentAnimation != "run")
               player.animate("run");
-          }		
+          }    
 
           player.move(v.x, v.y);
 

@@ -26,17 +26,19 @@
 
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
+
       var DEBUG = false;    
     
-      var SHOOT_TIME = 0;
-    
+      var SHOOT_TIME = 0; 
       var PISTOL_RECHARGE = 10;
+
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
       var fwdHeld;      //is the user holding a forward command
       var bwdHeld;      //is the user holding a backward command
       var shootHeld;    //is the user holding a shoot command
+
 
       var body = document.getElementById("body");
       var stage;
@@ -173,7 +175,7 @@
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
           this.hitRadius = r.hitRadius;
-          
+
           if(DEBUG){
             this.hitBox = new createjs.Shape();
             this.hitBox.graphics.s("#00f").r( - this.hitRadius, - this.hitRadius, 2*this.hitRadius, 2*this.hitRadius);
@@ -181,7 +183,6 @@
             this.hitBox.y = y;
             stage.addChild(this.hitBox);
           }
-
 
           var ss = new createjs.SpriteSheet(r);             
           this.animation = new createjs.BitmapAnimation(ss);   
@@ -295,6 +296,7 @@
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
         }
+
         this.animateShot = function(arg){
           this.shotAnimation.gotoAndPlay(arg);    
         }
@@ -338,7 +340,6 @@
         });*/
         return true;
       }
-    
 
       //Загрузка всех ресурсов, и запуск функции init()
       function load(){
@@ -377,6 +378,7 @@
 
         //firstly draw map on the bottom layers
         gMap = new TILEDMap();
+<<<<<<< HEAD
         gMap.load("testMap4");
         gMap.draw();
 
@@ -388,10 +390,6 @@
           stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
         }        
         
-        //CHECK it
-        player.moveTo(WIDTH / 2, HEIGHT / 2 - 40);
-        //player.animation.x = WIDTH / 2;
-        //splayer.animation.y = HEIGHT / 2;
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(){
           stage.update();
@@ -403,6 +401,7 @@
 
           var a = Math.atan2(stage.mouseY - player.animation.y, stage.mouseX - player.animation.x) + Math.PI / 2;
           player.animation.rotation = 180 * a / Math.PI;
+
           player.shotAnimation.rotation = player.animation.rotation;
           player.shotAnimation.x = player.animation.x + 23*Math.cos(a - Math.PI/2 + 0.35);
           player.shotAnimation.y = player.animation.y + 23*Math.sin(a - Math.PI/2 + 0.35);
@@ -413,6 +412,7 @@
           if(rtHeld) v.x = player.speed;
           if(fwdHeld) v.y = - player.speed;
           if(bwdHeld) v.y = player.speed;
+
           if(shootHeld) {
             if (shoot(player.animation.x, player.animation.y, a - Math.PI/2, stage, PISTOL_RECHARGE)){
               player.animateShot("s0");
@@ -769,7 +769,6 @@
                     }
                   }
                   if(this.currMapData.layers[layerIdx].type == "objectgroup"){ 
-
                     var data = this.currMapData.layers[layerIdx].objects;
 
                     for (var i = data.length - 1; i >= 0; i--) {

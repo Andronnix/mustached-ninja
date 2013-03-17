@@ -113,40 +113,43 @@
 
       //Функция записывает расстояние между прямоугольниками в dist, если оно меньше, чем текущее
       function getDistance(r0, r1, dist){
+
         if((r0.y2 > r1.y1) && (r1.y2 > r0.y1)){
-            if(r1.x2 < r0.x1){
-              var t = r0.x1 - r1.x2;
-              dist.left = (t < dist.left)? t : dist.left;
+          if(r1.x2 < r0.x1){
+            var t = r0.x1 - r1.x2;
+            dist.left = (t < dist.left)? t : dist.left;
+          }else{
+            if(r0.x2 < r1.x1){
+              var t = r1.x1 - r0.x2;
+              dist.right = (t < dist.right)? t : dist.right;
             }else{
-              if(r0.x2 < r1.x1){
-                var t = r1.x1 - r0.x2;
-                dist.right = (t < dist.right)? t : dist.right;
-              }else{
-                //Intersection
-                if(r0.x2 - r1.x1 > r1.x2 - r0.x1)
-                  dist.left = 0;
-                else
-                  dist.right = 0;
-              }
+              //Intersection
+              if(r0.x2 - r1.x1 > r1.x2 - r0.x1)
+                dist.left = 0;
+              else
+                dist.right = 0;
             }
           }
-          if((r0.x2 > r1.x1) && (r1.x2 > r0.x1)){
-            if(r1.y2 < r0.y1){
-              var t = r0.y1 - r1.y2;
-              dist.up = (t < dist.up)? t : dist.up;
-            }else{  
-              if(r0.y2 < r1.y1){
-                var t = r1.y1 - r0.y2;
-                dist.down = (t < dist.down)? t : dist.down;
-              }else{
-                //Позволяем вылезти туда, куда короче
-                if(r0.y2 - r1.y1 > r1.y2 - r0.y1)
-                  dist.up = 0; //нельзя вверх
-                else
-                  dist.down = 0; // нельзя вниз
-              }
+          return;          
+        }
+
+        if((r0.x2 > r1.x1) && (r1.x2 > r0.x1)){
+          if(r1.y2 < r0.y1){
+            var t = r0.y1 - r1.y2;
+            dist.up = (t < dist.up)? t : dist.up;
+          }else{  
+            if(r0.y2 < r1.y1){
+              var t = r1.y1 - r0.y2;
+              dist.down = (t < dist.down)? t : dist.down;
+            }else{
+              //Позволяем вылезти туда, куда короче
+              if(r0.y2 - r1.y1 > r1.y2 - r0.y1)
+                dist.up = 0; //нельзя вверх
+              else
+                dist.down = 0; // нельзя вниз
             }
-          }        
+          }
+        }        
       }
       //Возвращает расстояние до ближайших препятствий сверху, снизу, справа и слева
       function minDistance(r){
@@ -163,8 +166,8 @@
           getDistance(r0, r1, dist);          
         }
 
-        zomb.push(player);//Добавим игрока в массив зомбей, чтобы легко проверять
         var zl = zomb.length;
+
         for(i = zl - 1; i >= 0; i--){          
           r1 = {x1: zomb[i].animation.x - zomb[i].hitRadius, y1: zomb[i].animation.y - zomb[i].hitRadius,
                 x2: zomb[i].animation.x + zomb[i].hitRadius, y2: zomb[i].animation.y + zomb[i].hitRadius};
@@ -469,6 +472,8 @@
 
       //Загрузка всех ресурсов, и запуск функции init()
       function load(){
+        var t1 = {x:0, y:2};
+        var t2 = {x:0, y:2};
         var preLoads;
         var objQueue = new createjs.LoadQueue();
 
@@ -906,8 +911,10 @@
                         this.zombSpawners.push(spawner);
                       }
 
-                      if(data[i].type == "playerSpawn")
+                      if(data[i].type == "playerSpawn"){
                         player = new Player(data[i].x, data[i].y);                      
+                        this.zombies.push(player);//Добавим игрока в массив зомбей, чтобы легко проверять на столкновения
+                      }
                     };
                   }
               }

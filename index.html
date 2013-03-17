@@ -558,26 +558,31 @@
               player.animate("run");
           }    
 
+          var x0 = player.animation.x;
+          var y0 = player.animation.y;
+
           player.move(v.x, v.y);
+
+          var x1 = player.animation.x;
+          var y1 = player.animation.y;          
 
           var mapMove = {dx:0, dy:0};
           var mvC = 0.3; // Константа, поределяющая перемещение карты
 
-          if(player.animation.x < WIDTH * mvC && gMap.position.x < 0)
-            mapMove.dx = -v.x;
-          if(player.animation.y < HEIGHT * mvC && gMap.position.y < 0)
-            mapMove.dy = -v.y;
+          if(x1 < WIDTH * mvC && gMap.position.x < 0)
+            mapMove.dx = x0 - x1;
+          if(y1 < HEIGHT * mvC && gMap.position.y < 0)
+            mapMove.dy = y0 - y1;
+          
+          if(x1 > WIDTH * (1 - mvC))
+            mapMove.dx = x0 - x1;
+          if(y1 > HEIGHT * (1 - mvC))
+            mapMove.dy = y0 - y1;
 
-
-          /*
-          if(player.animation.x > WIDTH * (1 - mvC))
-            mapMove.dx = -v.x;
-          if(player.animation.y > HEIGHT * (1 - mvC))
-            mapMove.dy = -v.y;
           if(Math.abs(mapMove.dx) + Math.abs(mapMove.dy) > 0){
             gMap.move(mapMove.dx, mapMove.dy);
           }
-          */
+          
         }
 
       }
@@ -944,8 +949,10 @@
               obstArr[i].y += dy;
             };
 
+
             for (i = this.zombies.length - 1; i >= 0; i--) {
-              this.zombies[i].move(dx,dy);
+              var z = this.zombies[i];
+              z.moveTo(z.animation.x + dx,z.animation.y + dy);
             };
 
             var zSpawn = this.zombSpawners;

@@ -111,6 +111,99 @@
         return intersect;
       }
 
+      //Возвращает расстояние до ближайших препятствий сверху, снизу, справа и слева
+      function minDistance(r){
+        var obst = gMap.obstacles; 
+        var zomb = gMap.zombies;   
+        var r0 = {x1: r.x, y1: r.y, x2: r.x + r.w, y2: r.y + r.h};
+        var dist = {up:5*HEIGHT, down:5*HEIGHT, left:5*WIDTH, right:5*WIDTH};
+
+        for(var i = 0; i < obst.length; i++){
+          var r1 = {x1: obst[i].x, y1: obst[i].y, x2: obst[i].x + obst[i].width, y2: obst[i].y + obst[i].height};
+
+          if((r0.y2 >= r1.y1) && (r1.y2 >= r0.y1)){
+            if(r1.x2 < r0.x1){
+              var t = r0.x1 - r1.x2;
+              dist.left = (t < dist.left)? t : dist.left;
+            }else{
+              if(r0.x2 < r1.x1){
+                var t = r1.x1 - r0.x2;
+                dist.right = (t < dist.right)? t : dist.right;
+              }else{
+                //Intersection
+                if(r0.x2 - r1.x1 > r1.x2 - r0.x1)
+                  dist.left = 0;
+                else
+                  dist.right = 0;
+              }
+            }
+          }
+          if((r0.x2 >= r1.x1) && (r1.x2 >= r0.x1)){
+            if(r1.y2 < r0.y1){
+              var t = r0.y1 - r1.y2;
+              dist.up = (t < dist.up)? t : dist.up;
+            }else{  
+              if(r0.y2 < r1.y1){
+                var t = r1.y1 - r0.y2;
+                dist.down = (t < dist.down)? t : dist.down;
+              }else{
+                //Позволяем вылезти туда, куда короче
+                if(r0.y2 - r1.y1 > r1.y2 - r0.y1)
+                  dist.up = 0; //нельзя вверх
+                else
+                  dist.down = 0; // нельзя вниз
+              }
+            }
+          }
+        }
+
+        zomb.push(player);//Добавим игрока в массив зомбей, чтобы легко проверятьЧ
+        for(var i = 0; i < zomb.length; i++){          
+          var r1 = {x1: zomb[i].animation.x - zomb[i].hitRadius, y1: zomb[i].animation.y - zomb[i].hitRadius,
+                    x2: zomb[i].animation.x + zomb[i].hitRadius, y2: zomb[i].animation.y + zomb[i].hitRadius};
+
+          if((r1.x1 == r0.x1)&&(r1.x2 == r0.x2)&&(r1.y1 == r0.y1)&&(r1.y2 == r0.y2))continue;//the same object
+
+          if(!(r0.y2 < r1.y1 || r1.y2 < r0.y1)){
+            if(r1.x2 < r0.x1){
+              var t = r0.x1 - r1.x2;
+              dist.left = (t < dist.left)? t : dist.left;
+            }else if(r0.x2 < r1.x1){
+              var t = r1.x1 - r0.x2;
+              dist.right = (t < dist.right)? t : dist.right;
+            }else{
+                //Intersection
+                if(r0.x2 - r1.x1 > r1.x2 - r0.x1)
+                  dist.left = 0;
+                else
+                  dist.right = 0;
+            }
+          }
+          if(!(r0.x2 < r1.x1 || r1.x2 < r0.x1)){
+            if(r1.y2 < r0.y1){
+              var t = r0.y1 - r1.y2;
+              dist.up = (t < dist.up)? t : dist.up;
+            }else if(r0.y2 < r1.y1){
+              var t = r1.y1 - r0.y2;
+              dist.down = (t < dist.down)? t : dist.down;
+            }else{
+                //Позволяем вылезти туда, куда короче
+                if(r0.y2 - r1.y1 > r1.y2 - r0.y1)
+                  dist.up = 0; //нельзя вверх
+                else
+                  dist.down = 0; // нельзя вниз
+            }
+          }
+        }    
+        if(dist.right >=1) dist.right -= 1;
+        if(dist.down >=1) dist.down -= 1;
+        if(dist.left >=1) dist.left -= 1;
+        if(dist.up >=1) dist.up -= 1;
+
+        return dist;
+      }
+
+
       //Класс зомби
       function Zombie(x, y){
         x = x || 0;
@@ -121,14 +214,15 @@
         this.hitRadius = 0;
         this.hitBox = null;
 
-        //безопасно двигаем, проверяя на столкновения        
+        //небезопасный телепорт
         this.moveTo = function(x, y){
 
           var obst = gMap.obstacles;    
           var intersect0 = {x: 0, y: 0, w: 0, h: 0, xt: 0, yt:0 };
 
+          var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
+
           for(var i = 0; i < obst.length; i++){
-            var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
             var r2 = {x: obst[i].x, y: obst[i].y, w: obst[i].width, h: obst[i].height};
 
             var intersect = rectIntersection(r1, r2);
@@ -139,7 +233,6 @@
           var zomb = gMap.zombies;
           for(var i = 0; i < zomb.length; i++){
             if(zomb[i] == this) continue;
-            var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
             var r2 = {x: zomb[i].animation.x - zomb[i].hitRadius, y: zomb[i].animation.y - zomb[i].hitRadius,
                       w: 2 * zomb[i].hitRadius, h: 2 * zomb[i].hitRadius};
 
@@ -163,8 +256,36 @@
           }
         }
 
+        //безопасно двигаем, проверяя на столкновения    
         this.move = function(dx, dy){
-          this.moveTo(this.animation.x + dx, this.animation.y + dy);          
+
+          var r1 = {x: this.animation.x - this.hitRadius, y: this.animation.y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
+          var md = minDistance(r1);
+
+
+          if(dx > 0) dx = (dx < md.right)? dx : md.right;
+          else if(dx < 0) dx = (dx > - md.left)? dx : - md.left;
+
+          if(dy > 0) dy = (dy < md.down)? dy : md.down;
+          else if(dy < 0) dy = (dy > - md.up)? dy : - md.up;
+
+          this.animation.x += dx;
+          this.animation.y += dy;
+
+          if(DEBUG){
+            stage.removeChild(DEBUG_SHAPE);
+            DEBUG_SHAPE = new createjs.Shape();
+            DEBUG_SHAPE.graphics
+                                .s("#ff0").mt(0,0).lt(0, - (md.up))
+                                .s("#f00").mt(0,0).lt(0, (md.down))
+                                .s("#f0f").mt(0,0).lt( - (md.left), 0)
+                                .s("#0ff").mt(0,0).lt((md.right), 0)
+                                .s("#0f0").mt(0,0).lt((dx + dx/Math.abs(dx)*this.hitRadius), (dy + dy/Math.abs(dy)*this.hitRadius));
+            DEBUG_SHAPE.x = this.animation.x;
+            DEBUG_SHAPE.y = this.animation.y;
+            stage.addChild(DEBUG_SHAPE);  
+          }
+          // this.moveTo(this.animation.x + dx, this.animation.y + dy);          
         }
 
         this.rotate = function(alpha){
@@ -226,16 +347,19 @@
         this.hitRadius = 0;
         this.hitBox = null;
 
-        this.moveTo = function(x, y){
-          
+
+        //not safe teleport
+        this.moveTo = function(x, y){        
           var obst = gMap.obstacles;    
           this.shotAnimation.x = x + 17*Math.cos(this.animation.rotation*Math.PI/180 + 0.49);
           this.shotAnimation.y = y + 17*Math.sin(this.animation.rotation*Math.PI/180 + 0.49);
 
           var intersect0 = {x: 0, y: 0, w: 0, h: 0, xt: 0, yt:0 };
+          var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
 
-          for(var i = 0; i < obst.length; i++){
-            var r1 = {x: x - this.hitRadius, y: y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
+
+
+          for(var i = 0; i < obst.length; i++){            
             var r2 = {x: obst[i].x, y: obst[i].y, w: obst[i].width, h: obst[i].height};
 
             var intersect = rectIntersection(r1, r2);
@@ -252,7 +376,7 @@
           this.animation.x = x + intersect0.xt;
           this.animation.y = y + intersect0.yt;
           this.shotAnimation.x = x + 23*Math.cos(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.xt;
-          this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.yt;      
+          this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.yt;
 
           if(DEBUG){
             this.hitBox.x = this.animation.x;
@@ -260,8 +384,36 @@
           }
         }
 
+        //save move avoiding obstacles
         this.move = function(dx, dy){
-          this.moveTo(this.animation.x + dx,this.animation.y + dy);
+
+          var r1 = {x: this.animation.x - this.hitRadius, y: this.animation.y - this.hitRadius, w: 2*this.hitRadius, h: 2*this.hitRadius};
+          var md = minDistance(r1);
+
+          if(dx > 0) dx = (dx < md.right)? dx : md.right;
+          else if(dx < 0) dx = (dx > - md.left)? dx : - md.left;
+
+          if(dy > 0) dy = (dy < md.down)? dy : md.down;
+          else if(dy < 0) dy = (dy > - md.up)? dy : - md.up;
+
+          this.animation.x += dx;
+          this.animation.y += dy;
+          this.shotAnimation.x = this.animation.x + 23*Math.cos(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
+          this.shotAnimation.y = this.animation.y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
+
+          if(DEBUG){
+            stage.removeChild(DEBUG_SHAPE);
+            DEBUG_SHAPE = new createjs.Shape();
+            DEBUG_SHAPE.graphics
+                                .s("#ff0").mt(0,0).lt(0, - (md.up))
+                                .s("#f00").mt(0,0).lt(0, (md.down))
+                                .s("#f0f").mt(0,0).lt( - (md.left), 0)
+                                .s("#0ff").mt(0,0).lt((md.right), 0)
+                                .s("#0f0").mt(0,0).lt((dx + dx/Math.abs(dx)*this.hitRadius), (dy + dy/Math.abs(dy)*this.hitRadius));
+            DEBUG_SHAPE.x = this.animation.x;
+            DEBUG_SHAPE.y = this.animation.y;
+            stage.addChild(DEBUG_SHAPE);  
+          }
         }
 
         this.loadJSON = function(data){
@@ -437,6 +589,8 @@
           if(player.animation.y < HEIGHT * mvC && gMap.position.y < 0)
             mapMove.dy = -v.y;
 
+
+          /*
           if(player.animation.x > WIDTH * (1 - mvC))
             mapMove.dx = -v.x;
           if(player.animation.y > HEIGHT * (1 - mvC))
@@ -444,6 +598,7 @@
           if(Math.abs(mapMove.dx) + Math.abs(mapMove.dy) > 0){
             gMap.move(mapMove.dx, mapMove.dy);
           }
+          */
         }
 
       }

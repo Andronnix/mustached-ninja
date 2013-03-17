@@ -130,7 +130,7 @@
                 dist.right = 0;
             }
           }
-          return;          
+          return;
         }
 
         if((r0.x2 > r1.x1) && (r1.x2 > r0.x1)){
@@ -149,7 +149,7 @@
                 dist.down = 0; // нельзя вниз
             }
           }
-        }        
+        }
       }
       //Возвращает расстояние до ближайших препятствий сверху, снизу, справа и слева
       function minDistance(r){
@@ -186,10 +186,16 @@
         x = x || 0;
         y = y || 0;
         this.speed = 1.5;
+        this.healthPoints = 0;
+        this.maxHealthPoints = 0;
+
+        this.attackTicker = 0;        
+        this.attackDelay = 0;
 
         this.animation = null;
         this.hitRadius = 0;
         this.hitBox = null;
+        this.damage = 0;
 
         //небезопасный телепорт
         this.moveTo = function(x, y){
@@ -249,6 +255,7 @@
           this.animation.x += dx;
           this.animation.y += dy;
 
+
           if(DEBUG){
             stage.removeChild(DEBUG_SHAPE);
             DEBUG_SHAPE = new createjs.Shape();
@@ -272,7 +279,12 @@
         this.loadJSON = function(data){
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
+
           this.hitRadius = r.hitRadius;
+          this.maxHealthPoints = r.maxHealthPoints;
+          this.damage = r.damage;
+          this.attackDelay = r.attackDelay;
+
 
           if(DEBUG){
             this.hitBox = new createjs.Shape();
@@ -301,8 +313,26 @@
           var v = {x: 0, y: 0};
           v.x = this.speed * Math.cos(a); 
           v.y = this.speed * Math.sin(a);
-
           this.move(v.x, v.y);
+
+
+          var r = {x1: this.animation.x - this.hitRadius, y1: this.animation.y - this.hitRadius,
+                   x2: this.animation.x + this.hitRadius, y2: this.animation.y + this.hitRadius};
+
+          var pr = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
+                   x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};
+
+          var dist = {up:1, down:1, left:1, right:1}; //Все что угодно, кроме нуля
+          getDistance(r, pr, dist);
+
+          if(dist.up + dist.down + dist.left + dist.right < 4){//Касаемся игрока
+            if(this.attackTicker <= 0){
+              player.hit(this.damage);
+              this.attackTicker = this.attackDelay;
+            }
+          }
+
+          if(this.attackTicker > 0) this.attackTicker--;
         }
 
         //загружаем, отрисовываем зомбя
@@ -317,12 +347,16 @@
       function Player(x, y){
         x = x || 0;
         y = y || 0;
+
         this.speed = 3;
+        this.healthPoints = 0;
+        this.maxHealthPoints = 0;
 
         this.animation = null;
         this.shotAnimation = null;
         this.hitRadius = 0;
         this.hitBox = null;
+        this.healthBar = null;
 
 
         //not safe teleport
@@ -354,6 +388,8 @@
           this.animation.y = y + intersect0.yt;
           this.shotAnimation.x = x + 23*Math.cos(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.xt;
           this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36) + intersect0.yt;
+          this.healthBar.x = x + intersect0.xt;
+          this.healthBar.y = y + intersect0.yt;
 
           if(DEBUG){
             this.hitBox.x = this.animation.x;
@@ -377,6 +413,8 @@
           this.animation.y += dy;
           this.shotAnimation.x = this.animation.x + 23*Math.cos(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
           this.shotAnimation.y = this.animation.y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
+          this.healthBar.x += dx;
+          this.healthBar.y += dy;
 
           if(DEBUG){
             stage.removeChild(DEBUG_SHAPE);
@@ -397,6 +435,14 @@
           var r = resources["heroJSON"];
           r.images = [resources["hero"]];
           this.hitRadius = r.hitRadius;
+          this.maxHealthPoints = r.maxHealthPoints;
+          this.healthPoints = r.maxHealthPoints;
+
+          this.healthBar = new createjs.Shape();
+          this.healthBar.graphics.f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10, this.maxHealthPoints, 5);
+          this.healthBar.x = x;
+          this.healthBar.y = y;
+          stage.addChild(this.healthBar);
 
           var rs = resources["shotJSON"];
           rs.images = [resources["shot"]];
@@ -422,6 +468,7 @@
           stage.addChild(this.animation);
           stage.addChild(this.shotAnimation);
         }
+
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
         }
@@ -429,6 +476,19 @@
         this.animateShot = function(arg){
           this.shotAnimation.gotoAndPlay(arg);    
         }
+
+        //Ударить игрока
+        this.hit = function(dmg){    
+          if(this.healthPoints <= 0) return;      
+          this.healthPoints -= dmg;
+
+          this.healthBar.graphics.c(0).f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10,
+                                                    this.healthPoints, 5);
+          console.log(this.healthPoints);
+          if(this.healthPoints <= 0)//умереть
+            alert('You lost!');
+        }
+
         this.loadJSON();
       }
     
@@ -635,6 +695,7 @@
         this.spawnHandler = function(){
 
         }
+
         var SZ = this;
         createjs.Ticker.addEventListener("tick", function(event){
           SZ.nextSpawnTime  -= event.delta;

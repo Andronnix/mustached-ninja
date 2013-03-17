@@ -11,5 +11,6 @@
 		"regY" : 16,
 		"count": 8          
 	},
-	"hitRadius": 12
+	"hitRadius": 12,
+	"maxHealthPoints": 100
 }

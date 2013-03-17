@@ -11,5 +11,8 @@
 		"regY" : 16,
 		"count": 8          
 	},
-	"hitRadius": 12	
+	"hitRadius": 12,
+	"maxHealthPoints": 10,
+	"damage": 2,
+	"attackDelay": 30
 }

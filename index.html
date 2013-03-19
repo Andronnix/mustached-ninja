@@ -5,6 +5,7 @@
   <BODY id="body" onload="load();">  
     <script src="lib\\easeljs-0.6.0.min.js"></script>
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
+    <script src="lib\\TS_vector2.js"></script>
 
 
     <script>
@@ -308,36 +309,135 @@
         if (SHOOT_TIME < recharge)return false; else SHOOT_TIME = 0;
         //(y1 – y2)x + (x2 – x1)y + (x1y2 – x2y1) = 0
         //var k = Math.tan(angle + Math.PI);
-        var dx = x + 17*Math.cos(angle + 0.49);
-        var dy = y + 17*Math.sin(angle + 0.49);
+        /*var dx = x + 17*Math.cos(angle + 0.49);
+        var dy = y + 17*Math.sin(angle + 0.49);*/
+        var dx = x + 23*Math.cos(angle + 0.36);
+        var dy = y + 23*Math.sin(angle + 0.36);
         var kA = dy - stage.mouseY;
+        console.log("kA = " + kA);
         var kB = stage.mouseX - dx;
-        var kC = dx*stage.mouseY - stage.mouseX*dy;
-        //var i = new Zombie();
-        //for (var i in stage.children)console.log(stage.children[i]);
+        var kC = dx*stage.mouseY - stage.mouseX*dy;      
+        var shotVect = new Vec2(kB, -kA);
+        var zCheck = new Vec2(0,0);
+        var hitPoints = [];
+        for(var i = 0; i<2; i++)hitPoints[i] = {x:0, y:0};
+        function getDist(s,z){
+          //var tempS = new Vec2(0,0);
+          var cosAng = s.dot(z)/((s.length()*z.length()));
+          if (cosAng < 0)return 9001;
+          var sinAng = Math.sqrt(1-cosAng*cosAng);
+          console.log(sinAng*z.length());
+          return sinAng*z.length();
+        };
+        
+        function hitCheck(zombie){
+          var x1 = zombie.animation.x - zombie.hitRadius;
+          var x2 = zombie.animation.x + zombie.hitRadius;
+          var y1 = zombie.animation.y - zombie.hitRadius;
+          var y2 = zombie.animation.y + zombie.hitRadius;
+          var i = 0;
+          var y;
+          var x;
+          if (kB != 0){
+            y = ((kA*x1+kC)/(-kB));
+            if (y <= y2 && y >=y1){
+              hitPoints[i].x = x1;
+              hitPoints[i].y = y;
+              i++;
+            }
+            y = ((kA*x2+kC)/(-kB));
+            if (y <= y2 && y >=y1){
+              hitPoints[i].x = x2;
+              hitPoints[i].y = y;
+              i++;
+            }
+          }else{
+            if (dx <= x2 && dx >= x1){
+              for(i = 0; i<2; i++)hitPoints[i].x = dx
+                hitPoints[0].y = y1;
+                hitPoints[1].y = y2;
+            }
+          }
+          if (kA != 0 && i < 2){
+            x = ((kB*y1+kC)/(-kA));
+            if (x <= x2 && x >=x1){
+              hitPoints[i].x = x;
+              hitPoints[i].y = y1;
+              i++;
+            }
+            if (i < 2){
+              x = ((kB*y2+kC)/(-kA));            
+              if (x <= x2 && x >=x1){
+                hitPoints[i].x = x;
+                hitPoints[i].y = y2;
+                i++;
+              }
+            }
+          }else{
+            if (i == 0 && dx <= x2 && dx >= x1){
+              for(i = 0; i<2; i++)hitPoints[i].y = dy
+                hitPoints[0].x = x1;
+                hitPoints[1].x = x2;
+            }
+          }
+          var v1 = new Vec2(hitPoints[0].x - dx, hitPoints[0].y - dy);
+          var v2 = new Vec2(hitPoints[1].x - dx, hitPoints[1].y - dy);
+          if (v1.length()>v2.length()){
+            var temp = hitPoints[0];
+            hitPoints[0] = hitPoints[1];
+            hitPoints[1] = temp;
+          }
+          /*add
+          var g = new createjs.Shape();
+              g.graphics.setStrokeStyle(1);
+              g.graphics.beginStroke("#FF0000");
+              g.graphics.beginFill("#0000FF");
+              g.graphics.drawCircle(hitPoints[0].x,hitPoints[0].y,3);
+              g.graphics.beginFill("#FF0000");
+              g.graphics.drawCircle(hitPoints[1].x,hitPoints[1].y,3);
+
+
+                g.x = 0;
+                g.y = 0;
+
+                stage.addChild(g);          
+          //end*/
+          console.log(hitPoints);
+          //delete v1;
+          //delete v2;
+          return true;
+        }
+        
+        for (var i = 0; i < gMap.zombies.length; i++){
+          zCheck.x = gMap.zombies[i].animation.x - dx;
+          zCheck.y = gMap.zombies[i].animation.y - dy;
+          //console.log(zCheck);
+          //console.log(getDist(shotVect, zCheck));
+          //console.log(gMap.zombies)
+          if (getDist(shotVect, zCheck)<16 && hitCheck(gMap.zombies[i]))console.log("hit");
+        }
         
         
         //не убирай коменты - вдруг еще пригодится=)
         //как минимум здесь расчет правильного угла для стрельбы...
         
-        /*var length = 80 + Math.random()*50;
+        var length = 80 + Math.random()*50;
         var s = new createjs.Shape();
-        var dx = x + 17*Math.cos(angle + 0.49);
-        var dy = y + 17*Math.sin(angle + 0.49);
         var da = Math.atan2(stage.mouseY - dy, stage.mouseX - dx);
         var dr = Math.random()*15;
-        s.graphics.s("#808080").mt(dx + (10+dr)*Math.cos(da), dy + (10+dr)*Math.sin(da));
+        s.graphics.s("#808080").mt(dx /*+ (10+dr)*Math.cos(da)*/, dy /*+ (10+dr)*Math.sin(da)*/);
         //s.graphics.s("#F0E68C").mt(dx, dy);
         s.graphics.lt(x + length*Math.cos(angle), y + length*Math.sin(angle));
         stage.addChild(s);
         var t = 0;
+        var tr = 0;
         //я знаю, что здесь МОЖНО сделать лучше, но не знаю как
         createjs.Ticker.addEventListener("tick", function(event){
           if (t > 3){
             t = 0;
             stage.removeChild(s);
-          }else t++;
-        });*/
+          }else t++;          
+        });//*/
         return true;
       }
 

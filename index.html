@@ -482,9 +482,10 @@
           if(this.healthPoints <= 0) return;      
           this.healthPoints -= dmg;
 
-          this.healthBar.graphics.c(0).f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10,
-                                                    this.healthPoints, 5);
-          console.log(this.healthPoints);
+          this.healthBar.graphics.c().s(0).f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10,
+                                                    this.healthPoints, 5)
+                                 .s("#f00").f(0).r( - this.maxHealthPoints/2, - this.hitRadius - 10,
+                                                    this.maxHealthPoints, 5);
           if(this.healthPoints <= 0)//умереть
             alert('You lost!');
         }

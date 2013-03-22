@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <HTML>
   <HEAD>
+    <style type="text/css">
+      canvas {
+        border: 1px solid black;
+      }
+    </style>
   </HEAD>
   <BODY id="body" onload="load();">  
     <script src="lib\\easeljs-0.6.0.min.js"></script>
@@ -439,7 +444,7 @@
         var objQueue = new createjs.LoadQueue();
 
         objQueue.addEventListener("complete", function(){             
-            for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads.json'
+            for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
             }
 
@@ -530,14 +535,14 @@
           var mapMove = {dx:0, dy:0};
           var mvC = 0.4; // Константа, поределяющая перемещение карты
 
-          if(x1 < WIDTH * mvC && gMap.position.x < 0)
+          if(x1 < WIDTH * mvC  && (x0 - x1) > 0)
             mapMove.dx = x0 - x1;
-          if(y1 < HEIGHT * mvC && gMap.position.y < 0)
+          if(y1 < HEIGHT * mvC && (y0 - y1) > 0)
             mapMove.dy = y0 - y1;
-          
-          if(x1 > WIDTH * (1 - mvC))
+
+          if(x1 > WIDTH * (1 - mvC) && (x0 - x1) < 0)
             mapMove.dx = x0 - x1;
-          if(y1 > HEIGHT * (1 - mvC))
+          if(y1 > HEIGHT * (1 - mvC) && (y0 - y1) < 0)
             mapMove.dy = y0 - y1;
 
           if(Math.abs(mapMove.dx) + Math.abs(mapMove.dy) > 0){
@@ -670,7 +675,7 @@
               "y": 64
           };
 
-          this.position = {x: 0, y: 0};
+          this.position = {x: 0, y: 0, w:0, h:0};
 
           this.load = function (mapName) {      
               this.currMapData = resources[mapName];
@@ -812,6 +817,9 @@
           //-----------------------------------------
           // Draws all of the map data
           this.draw = function () {
+
+              var x0 = WIDTH, y0 = HEIGHT;//left top corner
+              var x1 = 0, y1 = 0;//right bottom corner
               // For every single layer in the 'layers' Array
               // of 'currMapData'...
               for(var layerIdx = 0; layerIdx < this.currMapData.layers.length; layerIdx++) {
@@ -851,6 +859,16 @@
 
                           var b = new createjs.Bitmap(tPKT.img);
                           b.sourceRect = new createjs.Rectangle(tPKT.px, tPKT.py, this.tileSize.x, this.tileSize.y);
+
+                          
+                          //Find top-left corner position
+                          if(dx < x0) x0 = dx;
+                          if(dy < y0) y0 = dy;
+
+                          //Find right-bottom corner position
+                          if(dx + this.tileSize.x > x1) x1 = dx + this.tileSize.x;
+                          if(dy + this.tileSize.y > y1) y1 = dy + this.tileSize.y;
+
                           b.x = dx;
                           b.y = dy;
                           stage.addChild(b);  
@@ -861,7 +879,7 @@
                           this.obstacles.push(r);
 
                           if(DEBUG){
-                            var ddd = new createjs.Shape();
+                            var ddd = new createjs.Shape(); 
                             ddd.graphics.s("#f00").r(r.x, r.y, r.width, r.height);                          
                             stage.addChild(ddd);
                           }
@@ -888,8 +906,11 @@
 
             var x = player.animation.x; 
             var y = player.animation.y;
+            this.position.x = x0;
+            this.position.y = y0;
+            this.position.w = x1 - x0;
+            this.position.h = y1 - y0;
             gMap.move(- x + WIDTH/2, - y + HEIGHT/2);//Центрируем карту
-
           }
 
 
@@ -901,6 +922,21 @@
             dy = dy || 0;
 
             var i = 0;
+            var dx1 = this.position.x;
+            if(dx > 0){
+              if(dx + this.position.x > 0) dx = - this.position.x;
+            }else if(dx < 0){
+              if(dx + this.position.x + this.position.w < WIDTH) 
+                dx = (dx > WIDTH - (this.position.x + this.position.w))? dx : WIDTH - (this.position.x + this.position.w);
+            }
+
+            if(dy > 0){
+              if(dy + this.position.y > 0) dy = - this.position.y;
+            } else 
+              if(dy < 0){
+                if(dy + this.position.y + this.position.h < HEIGHT) 
+                  dy = (dy > HEIGHT - (this.position.y + this.position.h))? dy : HEIGHT - (this.position.y + this.position.h);
+              }
 
             var tilesArr = this.tiles;
             for (i = tilesArr.length - 1; i >= 0; i--) {

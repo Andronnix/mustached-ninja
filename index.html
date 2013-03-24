@@ -120,6 +120,8 @@
 
         this.animation = null;
         this.hitRadius = 0;
+        this.hitPoints = [];
+        for(var i = 0; i<2; i++)this.hitPoints[i] = {x:0, y:0};
         this.hitBox = null;
 
         //безопасно двигаем, проверяя на столкновения        
@@ -176,6 +178,8 @@
           var r = resources["zombieJSON"];
           r.images = [resources["zombie"]];
           this.hitRadius = r.hitRadius;
+          //this.hitPoints = r.hitPoints;
+          
 
           if(DEBUG){
             this.hitBox = new createjs.Shape();
@@ -195,7 +199,7 @@
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
         }
-        function hunt () {
+        this.hunt = function () {
           //Just follow to the player
           var a = Math.atan2(this.animation.y - player.animation.y, this.animation.x - player.animation.x) + Math.PI;
 
@@ -210,10 +214,27 @@
 
         //загружаем, отрисовываем зомбя
         this.loadJSON();
-
+        
         //Запускаем слежение за игроком
         var ZZ = this;      
-        createjs.Ticker.addEventListener("tick", function(){hunt.call(ZZ);});
+        createjs.Ticker.addEventListener("tick", this.h = function(){ZZ.hunt.call(ZZ);});
+        
+        this.imHit = function(id){
+          
+          stage.removeChild(this.hitBox);
+          //stage.removeChild(this.animation);
+          var zomb = gMap.zombies;
+          //console.log(createjs.Ticker.dispatchEvent("tick"));
+          //createjs.Ticker.removeAllEventListeners("tick");          
+          console.log(id);
+          console.log(ZZ);
+          /*console.log(zomb[id]);
+          delete zomb.splice(id,1);
+          console.log(zomb[id]);*/
+
+          //gMap.zombies.splice(id,1);
+          //delete this;
+        }
       }
 
       //Класс игрок
@@ -314,27 +335,35 @@
         var dx = x + 23*Math.cos(angle + 0.36);
         var dy = y + 23*Math.sin(angle + 0.36);
         var kA = dy - stage.mouseY;
-        console.log("kA = " + kA);
+        //console.log("kA = " + kA);
         var kB = stage.mouseX - dx;
         var kC = dx*stage.mouseY - stage.mouseX*dy;      
         var shotVect = new Vec2(kB, -kA);
         var zCheck = new Vec2(0,0);
+        var closestDist = 9000;
+        var closestDistObst = 9000;
+        var closestObst = 0; //id of closest obstacle
+        var closestZ = 0; //id of closest Zombie
         var hitPoints = [];
-        for(var i = 0; i<2; i++)hitPoints[i] = {x:0, y:0};
+        var shotPoints = [];
+        for(var i = 0; i<2; i++){
+          hitPoints[i] = {x:0, y:0};
+          shotPoints[i] = {x:0, y:0};
+        }
         function getDist(s,z){
           //var tempS = new Vec2(0,0);
           var cosAng = s.dot(z)/((s.length()*z.length()));
           if (cosAng < 0)return 9001;
           var sinAng = Math.sqrt(1-cosAng*cosAng);
-          console.log(sinAng*z.length());
+          //console.log(sinAng*z.length());
           return sinAng*z.length();
         };
         
-        function hitCheck(zombie){
-          var x1 = zombie.animation.x - zombie.hitRadius;
-          var x2 = zombie.animation.x + zombie.hitRadius;
-          var y1 = zombie.animation.y - zombie.hitRadius;
-          var y2 = zombie.animation.y + zombie.hitRadius;
+        function hitCheck(x, y, hitRadius){
+          var x1 = x - hitRadius;
+          var x2 = x + hitRadius;
+          var y1 = y - hitRadius;
+          var y2 = y + hitRadius;
           var i = 0;
           var y;
           var x;
@@ -380,44 +409,93 @@
                 hitPoints[1].x = x2;
             }
           }
-          var v1 = new Vec2(hitPoints[0].x - dx, hitPoints[0].y - dy);
-          var v2 = new Vec2(hitPoints[1].x - dx, hitPoints[1].y - dy);
-          if (v1.length()>v2.length()){
-            var temp = hitPoints[0];
-            hitPoints[0] = hitPoints[1];
-            hitPoints[1] = temp;
-          }
-          /*add
-          var g = new createjs.Shape();
-              g.graphics.setStrokeStyle(1);
-              g.graphics.beginStroke("#FF0000");
-              g.graphics.beginFill("#0000FF");
-              g.graphics.drawCircle(hitPoints[0].x,hitPoints[0].y,3);
-              g.graphics.beginFill("#FF0000");
-              g.graphics.drawCircle(hitPoints[1].x,hitPoints[1].y,3);
+          if (i == 2){
+            var v1 = new Vec2(hitPoints[0].x - dx, hitPoints[0].y - dy);
+            var v2 = new Vec2(hitPoints[1].x - dx, hitPoints[1].y - dy);
+            if (v1.length()>v2.length()){
+              var temp = hitPoints[0];
+              hitPoints[0] = hitPoints[1];
+              hitPoints[1] = temp;
+            }
+        /*var g = new createjs.Shape();
+            g.graphics.setStrokeStyle(1);
+            g.graphics.beginStroke("#FF0000");
+            g.graphics.beginFill("#0000FF");
+            g.graphics.drawCircle(hitPoints[0].x,hitPoints[0].y,3);
+            g.graphics.beginFill("#FF0000");
+            g.graphics.drawCircle(hitPoints[1].x,hitPoints[1].y,3);
+            g.x = 0;
+            g.y = 0;
 
-
-                g.x = 0;
-                g.y = 0;
-
-                stage.addChild(g);          
-          //end*/
-          console.log(hitPoints);
+            stage.addChild(g);  */           
+          //console.log(hitPoints);
           //delete v1;
           //delete v2;
-          return true;
+            return true;
+          } else return false;
         }
-        
+        //ищем того самого, единственного зомби, который будет повержен... ах...
         for (var i = 0; i < gMap.zombies.length; i++){
           zCheck.x = gMap.zombies[i].animation.x - dx;
           zCheck.y = gMap.zombies[i].animation.y - dy;
-          //console.log(zCheck);
-          //console.log(getDist(shotVect, zCheck));
-          //console.log(gMap.zombies)
-          if (getDist(shotVect, zCheck)<16 && hitCheck(gMap.zombies[i]))console.log("hit");
+          if (getDist(shotVect, zCheck)<16 && hitCheck(gMap.zombies[i].animation.x, gMap.zombies[i].animation.y,
+                                                       gMap.zombies[i].hitRadius))
+          {
+            gMap.zombies[i].hitPoints[0].x = hitPoints[0].x;
+            gMap.zombies[i].hitPoints[0].y = hitPoints[0].y;
+            gMap.zombies[i].hitPoints[1].x = hitPoints[1].x;
+            gMap.zombies[i].hitPoints[1].y = hitPoints[1].y;
+            if (zCheck.length() < closestDist){
+              //zCheck = zCheck.abs();
+              closestDist = zCheck.length();
+              closestZ = i;
+            }
+          }
         }
-        
-        
+        //стены стены!
+        for (var i = 0; i < gMap.obstacles.length; i++){
+          zCheck.x = gMap.obstacles[i].x - dx + gMap.obstacles[i].width/2;
+          zCheck.y = gMap.obstacles[i].y - dy + gMap.obstacles[i].height/2;
+          if (getDist(shotVect, zCheck)<20 && hitCheck(gMap.obstacles[i].x+gMap.obstacles[i].width/2,
+                                                       gMap.obstacles[i].y+gMap.obstacles[i].height/2,
+                                                       /*gMap.obstacles[i].hitRadius*/22)) //ааа говнокод, нужна переменная!!!
+          {
+            gMap.obstacles[i].hitPoints[0].x = hitPoints[0].x;
+            gMap.obstacles[i].hitPoints[0].y = hitPoints[0].y;
+            gMap.obstacles[i].hitPoints[1].x = hitPoints[1].x;
+            gMap.obstacles[i].hitPoints[1].y = hitPoints[1].y;
+            if (zCheck.length() < closestDistObst){
+              //zCheck = zCheck.abs();
+              closestDistObst = zCheck.length();
+              closestObst = i;
+            }
+          }
+        }
+        if (closestDistObst > closestDist){
+          gMap.zombies[closestZ].imHit(closestZ);
+          //var zomb = gMap.zombies;
+          //delete zomb.splice(closestZ,1);
+          /*hitPoints[0].x = gMap.zombies[closestZ].hitPoints[0].x;
+          hitPoints[0].y = gMap.zombies[closestZ].hitPoints[0].y;
+          hitPoints[1].x = gMap.zombies[closestZ].hitPoints[1].x;
+          hitPoints[1].y = gMap.zombies[closestZ].hitPoints[1].y;*/
+        }else{
+          hitPoints[0].x = gMap.obstacles[closestObst].hitPoints[0].x;
+          hitPoints[0].y = gMap.obstacles[closestObst].hitPoints[0].y;
+          hitPoints[1].x = gMap.obstacles[closestObst].hitPoints[1].x;
+          hitPoints[1].y = gMap.obstacles[closestObst].hitPoints[1].y;        
+        }
+        var g = new createjs.Shape();
+            g.graphics.setStrokeStyle(1);
+            g.graphics.beginStroke("#FF0000");
+            g.graphics.beginFill("#0000FF");
+            g.graphics.drawCircle(hitPoints[0].x,hitPoints[0].y,3);
+            g.graphics.beginFill("#FF0000");
+            g.graphics.drawCircle(hitPoints[1].x,hitPoints[1].y,3);
+            g.x = 0;
+            g.y = 0;
+        stage.addChild(g); 
+        console.log("-------------------");
         //не убирай коменты - вдруг еще пригодится=)
         //как минимум здесь расчет правильного угла для стрельбы...
         
@@ -480,6 +558,7 @@
         gMap = new TILEDMap();
         gMap.load("testMap4");
         gMap.draw();
+        
 
         if(DEBUG){
           DEBUG_FIELD = new createjs.Text("Test");
@@ -856,7 +935,11 @@
                           this.tiles.push(b); 
                         }else{ 
                           // Add obstacle to array
-                          var r = new createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);                          
+                          
+                          var r = new createjs.Rectangle(dx, dy, this.tileSize.x, this.tileSize.y);   
+                          var hitPoints = [];
+                          for(var i = 0; i<2; i++)hitPoints[i] = {x:0, y:0};
+                          r["hitPoints"] = hitPoints;
                           this.obstacles.push(r);
 
                           if(DEBUG){

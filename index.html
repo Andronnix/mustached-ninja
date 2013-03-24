@@ -231,7 +231,7 @@
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
         }
-        function hunt () {
+        this.hunt = function() {
           //Just follow to the player
           var a = Math.atan2(this.animation.y - player.animation.y, this.animation.x - player.animation.x) + Math.PI;
 
@@ -256,6 +256,10 @@
             if(this.attackTicker <= 0){
               player.hit(this.damage);
               this.attackTicker = this.attackDelay;
+              /*
+              var HH = this.HH;
+              createjs.Ticker.removeEventListener("tick", HH);
+              */
             }
           }
 
@@ -266,8 +270,9 @@
         this.loadJSON();
 
         //Запускаем слежение за игроком
-        var ZZ = this;      
-        createjs.Ticker.addEventListener("tick", function(){hunt.call(ZZ);});
+        var ZZ = this;
+        //this.HH = 
+        createjs.Ticker.addEventListener("tick", function(){ZZ.hunt();});
       }
 
       //Класс игрок
@@ -475,7 +480,7 @@
 
         //firstly draw map on the bottom layers
         gMap = new TILEDMap();
-        gMap.load("testMap4");
+        gMap.load("testMap5");
         gMap.draw();
 
         if(DEBUG){
@@ -894,12 +899,26 @@
                       if(data[i].type == "zombSpawn"){
                         var spawner = new zombieSpawner(data[i]);
                         this.zombSpawners.push(spawner);
+                        continue;
                       }
 
                       if(data[i].type == "playerSpawn"){
                         player = new Player(data[i].x, data[i].y); 
                         this.zombies.push(player);//Добавим игрока в массив зомбей, чтобы легко проверять на столкновения
+                        continue;
                       }
+
+
+                      //Not zombie, not 
+                      var bData = resources["bonusJSON"][data[i].type];//bonus parameters
+                      
+                      var b = new createjs.Bitmap(resources["bonus"]);
+                      b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
+                      b.x = data[i].x;
+                      b.y = data[i].y;
+                      this.tiles.push(b);
+                      stage.addChild(b);
+                      
                     };
                   }
               }

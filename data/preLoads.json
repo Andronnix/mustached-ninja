@@ -30,6 +30,14 @@
 	{
 		"name" : "shotJSON",
 		"src" : "data\\shot.json"
+	},
+	{
+		"name" : "bonus",
+		"src" : "images\\bonus.png"
+	},	
+	{
+		"name" : "bonusJSON",
+		"src" : "data\\bonus.json"
 	},	
 	{
 		"name" : "testMap1",
@@ -46,5 +54,9 @@
 	{
 		"name" : "testMap4",
 		"src" : "data\\testMap4.json"
+	},		
+	{
+		"name" : "testMap5",
+		"src" : "data\\testMap5.json"
 	}
 ]

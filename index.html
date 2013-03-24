@@ -217,20 +217,20 @@
         
         //Запускаем слежение за игроком
         var ZZ = this;      
-        createjs.Ticker.addEventListener("tick", this.h = function(){ZZ.hunt.call(ZZ);});
+        this.HH = createjs.Ticker.addEventListener("tick", function(){ZZ.hunt();});
         
         this.imHit = function(id){
           
           stage.removeChild(this.hitBox);
-          //stage.removeChild(this.animation);
+          stage.removeChild(this.animation);
           var zomb = gMap.zombies;
-          //console.log(createjs.Ticker.dispatchEvent("tick"));
-          //createjs.Ticker.removeAllEventListeners("tick");          
+          var HH = this.HH;
+          createjs.Ticker.removeEventListener("tick", HH);          
           console.log(id);
           console.log(ZZ);
-          /*console.log(zomb[id]);
+          console.log(zomb[id]);
           delete zomb.splice(id,1);
-          console.log(zomb[id]);*/
+          console.log(zomb[id]);
 
           //gMap.zombies.splice(id,1);
           //delete this;

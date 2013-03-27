@@ -58,5 +58,13 @@
 	{
 		"name" : "testMap5",
 		"src" : "data\\testMap5.json"
+	},		
+	{
+		"name" : "omgLargeMap",
+		"src" : "data\\omgLargeMap.json"
+	},
+	{
+		"name" : "startMenu",
+		"src" : "data\\startMenu.json"
 	}
 ]

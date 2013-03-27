@@ -1,0 +1,16 @@
+{
+	"buttons":[
+		{
+			"name": "Large level",
+			"resourseName": "omgLargeMap"
+		},
+		{
+			"name": "Level 4",
+			"resourseName": "testMap4"
+		},
+		{
+			"name": "Level 5",
+			"resourseName": "testMap5"
+		}
+	]
+}

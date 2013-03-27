@@ -274,7 +274,7 @@
 
         //Запускаем слежение за игроком
         var ZZ = this;
-        this.HH = createjs.Ticker.addEventListener("tick", function(){ZZ.hunt();});
+        this.HH = createjs.Ticker.addEventListener("tick", function(evt){if(evt.paused)return;ZZ.hunt();});
         
         this.imHit = function(id){
           
@@ -283,11 +283,14 @@
           var zomb = gMap.zombies;
           var HH = this.HH;
           createjs.Ticker.removeEventListener("tick", HH);          
-          console.log(id);
-          console.log(ZZ);
-          console.log(zomb[id]);
+          
+          // console.log(id);
+          // console.log(ZZ);
+          // console.log(zomb[id]);
+          
           delete zomb.splice(id,1);
-          console.log(zomb[id]);
+          
+          //console.log(zomb[id]);
 
           //gMap.zombies.splice(id,1);
           //delete this;
@@ -395,6 +398,7 @@
 
           stage.addChild(this.animation);
           stage.addChild(this.shotAnimation);
+          createjs.Ticker.addEventListener("tick", this.handleTick);
         }
 
         this.animate = function(arg){
@@ -417,7 +421,66 @@
           if(this.healthPoints <= 0)//умереть
             alert('You lost!');
         }
+        
+        this.handleTick = function(evt) {
+          if(evt.paused)return;
+          //Просто смотрим на мышку
 
+          var a = Math.atan2(stage.mouseY - player.animation.y, stage.mouseX - player.animation.x) + Math.PI / 2;
+          player.animation.rotation = 180 * a / Math.PI;
+
+          player.shotAnimation.rotation = player.animation.rotation;
+          player.shotAnimation.x = player.animation.x + 23*Math.cos(a - Math.PI/2 + 0.35);
+          player.shotAnimation.y = player.animation.y + 23*Math.sin(a - Math.PI/2 + 0.35);
+
+          var v = {x:0, y:0};  // player speed vector
+
+          if(lfHeld) v.x = - player.speed;
+          if(rtHeld) v.x = player.speed;
+          if(fwdHeld) v.y = - player.speed;
+          if(bwdHeld) v.y = player.speed;
+
+          if(shootHeld) {
+            if (shoot(player.animation.x, player.animation.y, a - Math.PI/2, stage, PISTOL_RECHARGE)){
+              player.animateShot("s0");
+            }
+          }
+          
+          SHOOT_TIME++;
+
+          if(v.x * v.x + v.y * v.y == 0){
+            player.animate("stay");
+          }else{
+            if(player.animation.currentAnimation != "run")
+              player.animate("run");
+          }    
+
+          var x0 = player.animation.x;
+          var y0 = player.animation.y;
+
+          player.move(v.x, v.y);
+
+          var x1 = player.animation.x;
+          var y1 = player.animation.y;          
+
+          var mapMove = {dx:0, dy:0};
+          var mvC = 0.4; // Константа, поределяющая перемещение карты
+
+          if(x1 < WIDTH * mvC  && (x0 - x1) > 0)
+            mapMove.dx = x0 - x1;
+          if(y1 < HEIGHT * mvC && (y0 - y1) > 0)
+            mapMove.dy = y0 - y1;
+
+          if(x1 > WIDTH * (1 - mvC) && (x0 - x1) < 0)
+            mapMove.dx = x0 - x1;
+          if(y1 > HEIGHT * (1 - mvC) && (y0 - y1) < 0)
+            mapMove.dy = y0 - y1;
+
+          if(Math.abs(mapMove.dx) + Math.abs(mapMove.dy) > 0){
+            gMap.move(mapMove.dx, mapMove.dy);
+          }
+          
+        }        
         this.loadJSON();
       }
     
@@ -607,13 +670,40 @@
         var t = 0;
         var tr = 0;
         //я знаю, что здесь МОЖНО сделать лучше, но не знаю как
-        createjs.Ticker.addEventListener("tick", function(event){
+        createjs.Ticker.addEventListener("tick", function(evt){
+          if(evt.paused)return;
           if (t > 3){
             t = 0;
             stage.removeChild(s);
           }else t++;          
         });//*/
         return true;
+      }
+
+
+      function startMenu(){
+        gMap = new TILEDMap();
+
+        var menu = ["Large Map", "Test map 4", "Test map 5"];
+        var menuMaps = ["omgLargeMap", "testMap4", "testMap5"];
+        for(var i = 0; i < menu.length; i++){
+          var btn = document.createElement("input");
+          btn.type = "button";
+          btn.value = menu[i];
+          btn.mapName = menuMaps[i];
+          btn.onclick = function(){ gMap.load(this.mapName);};
+          body.appendChild(btn);
+        }
+        var pauseBtn = document.createElement("input");
+        pauseBtn.type = "button";
+        pauseBtn.value = "Pause";
+        pauseBtn.onclick = function(){ createjs.Ticker.setPaused(true);};
+        body.appendChild(pauseBtn);
+        var playBtn = document.createElement("input");
+        playBtn.type = "button";
+        playBtn.value = "Play";
+        playBtn.onclick = function(){ createjs.Ticker.setPaused(false);};
+        body.appendChild(playBtn);
       }
 
       //Загрузка всех ресурсов, и запуск функции init()
@@ -650,86 +740,19 @@
         body.appendChild(canvas);
 
         stage = new createjs.Stage("gameCanvas");
-
-        //firstly draw map on the bottom layers
-        gMap = new TILEDMap();
-        gMap.load("testMap5");
-        gMap.draw();
-        
-
-        if(DEBUG){
-          DEBUG_FIELD = new createjs.Text("Test");
-          DEBUG_SHAPE = new createjs.Shape();
-
-          DEBUG_FIELD.x = 0; DEBUG_FIELD.y = 0; DEBUG_SHAPE.x = 50; DEBUG_SHAPE.y = 50; 
-          stage.addChild(DEBUG_FIELD);stage.addChild(DEBUG_SHAPE);
-        }        
-        
         createjs.Ticker.setFPS(60);
-        createjs.Ticker.addEventListener("tick", function(){
+        createjs.Ticker.addEventListener("tick", function(evt){
           stage.update();
         });
-                
-        createjs.Ticker.addEventListener("tick", handleTick);
-        function handleTick(event) {
-          //Просто смотрим на мышку
 
-          var a = Math.atan2(stage.mouseY - player.animation.y, stage.mouseX - player.animation.x) + Math.PI / 2;
-          player.animation.rotation = 180 * a / Math.PI;
 
-          player.shotAnimation.rotation = player.animation.rotation;
-          player.shotAnimation.x = player.animation.x + 23*Math.cos(a - Math.PI/2 + 0.35);
-          player.shotAnimation.y = player.animation.y + 23*Math.sin(a - Math.PI/2 + 0.35);
 
-          var v = {x:0, y:0};  // player speed vector
+        startMenu();
 
-          if(lfHeld) v.x = - player.speed;
-          if(rtHeld) v.x = player.speed;
-          if(fwdHeld) v.y = - player.speed;
-          if(bwdHeld) v.y = player.speed;
-
-          if(shootHeld) {
-            if (shoot(player.animation.x, player.animation.y, a - Math.PI/2, stage, PISTOL_RECHARGE)){
-              player.animateShot("s0");
-            }
-          }
-          
-          SHOOT_TIME++;
-
-          if(v.x * v.x + v.y * v.y == 0){
-            player.animate("stay");
-          }else{
-            if(player.animation.currentAnimation != "run")
-              player.animate("run");
-          }    
-
-          var x0 = player.animation.x;
-          var y0 = player.animation.y;
-
-          player.move(v.x, v.y);
-
-          var x1 = player.animation.x;
-          var y1 = player.animation.y;          
-
-          var mapMove = {dx:0, dy:0};
-          var mvC = 0.4; // Константа, поределяющая перемещение карты
-
-          if(x1 < WIDTH * mvC  && (x0 - x1) > 0)
-            mapMove.dx = x0 - x1;
-          if(y1 < HEIGHT * mvC && (y0 - y1) > 0)
-            mapMove.dy = y0 - y1;
-
-          if(x1 > WIDTH * (1 - mvC) && (x0 - x1) < 0)
-            mapMove.dx = x0 - x1;
-          if(y1 > HEIGHT * (1 - mvC) && (y0 - y1) < 0)
-            mapMove.dy = y0 - y1;
-
-          if(Math.abs(mapMove.dx) + Math.abs(mapMove.dy) > 0){
-            gMap.move(mapMove.dx, mapMove.dy);
-          }
-          
-        }
-
+        // //firstly draw map on the bottom layers
+        // gMap = new TILEDMap();
+        // gMap.load("omgLargeMap");
+        // gMap.draw();      
       }
       
 
@@ -783,6 +806,7 @@
 
         var SZ = this;
         createjs.Ticker.addEventListener("tick", function(event){
+          if(event.paused)return;
           SZ.nextSpawnTime  -= event.delta;
 
           if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
@@ -857,6 +881,27 @@
           this.position = {x: 0, y: 0, w:0, h:0};
 
           this.load = function (mapName) {      
+              //Clear all resources
+              stage.removeAllChildren();
+              player = null;
+              stage.clear();
+              this.currMapData = null;
+              this.obstacles = [];
+              this.zombSpawners = [];
+              this.zombies = [];
+              this.playerSpawn = null;
+              this.tilesets = [];
+              this.tiles = [];
+
+              createjs.Ticker.removeAllEventListeners("tick");
+              createjs.Ticker.addEventListener("tick", function(evt){
+                if(evt.paused)return;
+                stage.update();
+              });
+
+
+
+
               this.currMapData = resources[mapName];
 
               var map = this.currMapData;
@@ -921,6 +966,7 @@
                   // YOUR CODE HERE
                   this.tilesets.push(ts);
               }
+              this.draw();
           };
 
           //-----------------------------------------
@@ -1092,8 +1138,8 @@
                       
                       var b = new createjs.Bitmap(resources["bonus"]);
                       b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
-                      b.x = data[i].x;
-                      b.y = data[i].y;
+                      b.x = data[i].x - bData.width/2;
+                      b.y = data[i].y - bData.height/2;
                       this.tiles.push(b);
                       stage.addChild(b);
                       

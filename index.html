@@ -29,7 +29,7 @@
       var KEYCODE_D = 68;     //usefull keycode
       var KEYCODE_S = 83;     //usefull keycode
 
-      var LOAD_PARTS = 51;    //Don't ASK, i don't give a fuck why!
+      var LOAD_PARTS = 17;    //Don't ASK, i don't give a fuck why!
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
@@ -705,10 +705,10 @@
           tempBar.drawBackBar(160, 200, 320, 20)
 
           var currParts = 0;
-        objQueue.addEventListener("progress", function(){
+        objQueue.addEventListener("fileload", function(){
           currParts++;
-          tempBar.drawBar(160, 200, 320*currParts/LOAD_PARTS, 20);          
-          //console.log(t);
+          tempBar.drawBar(160, 200, 320*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
+          //console.log(currParts);
         })
           
         //end loadScreen

@@ -11,6 +11,7 @@
     <script src="lib\\easeljs-0.6.0.min.js"></script>
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
     <script src="lib\\TS_vector2.js"></script>
+    <script src="lib\\loadbar.js"></script>
 
 
     <script>
@@ -28,6 +29,8 @@
       var KEYCODE_D = 68;     //usefull keycode
       var KEYCODE_S = 83;     //usefull keycode
 
+      var LOAD_PARTS = 51;    //Don't ASK, i don't give a fuck why!
+      
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
 
@@ -619,8 +622,8 @@
             }
           }
           
-          SHOOT_TIME++;
-
+          SHOOT_TIME++;          
+          
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");
           }else{
@@ -688,8 +691,27 @@
       //Загрузка всех ресурсов, и запуск функции init()
       function load(){
         var preLoads;
-        var objQueue = new createjs.LoadQueue();
 
+        var objQueue = new createjs.LoadQueue();
+        //loadScreen add
+        var canvas = document.createElement("canvas");
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        canvas.id = "gameCanvas";
+        body.appendChild(canvas);
+        
+        stage = new createjs.Stage("gameCanvas");         
+          var tempBar = new loadBar();
+          tempBar.drawBackBar(160, 200, 320, 20)
+
+          var currParts = 0;
+        objQueue.addEventListener("progress", function(){
+          currParts++;
+          tempBar.drawBar(160, 200, 320*currParts/LOAD_PARTS, 20);          
+          //console.log(t);
+        })
+          
+        //end loadScreen
         objQueue.addEventListener("complete", function(){             
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
@@ -712,13 +734,7 @@
       //Создаем канвас, грузим карту, игрока, зомбей, запускаем
       function init() {
 
-        var canvas = document.createElement("canvas");
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
-        canvas.id = "gameCanvas";
-        body.appendChild(canvas);
 
-        stage = new createjs.Stage("gameCanvas");
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(evt){
           stage.update();

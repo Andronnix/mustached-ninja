@@ -69,21 +69,24 @@
 
       //Функция записывает расстояние между прямоугольниками в dist, если оно меньше, чем текущее
       function getDistance(r0, r1, dist){
-
+        var t = 0;
         if((r0.y2 > r1.y1) && (r1.y2 > r0.y1)){
           if(r1.x2 < r0.x1){
-            var t = r0.x1 - r1.x2;
+            t = r0.x1 - r1.x2;
             dist.left = (t < dist.left)? t : dist.left;
           }else{
             if(r0.x2 < r1.x1){
-              var t = r1.x1 - r0.x2;
+              t = r1.x1 - r0.x2;
               dist.right = (t < dist.right)? t : dist.right;
             }else{
-              //Intersection
+              //Позволяем вылезти туда, куда короче
               if(r0.x2 - r1.x1 > r1.x2 - r0.x1)
                 dist.left = 0;
-              else
-                dist.right = 0;
+              else{
+                if(r0.x2 - r1.x1 < r1.x2 - r0.x1){
+                  dist.right = 0;
+                }
+              }
             }
           }
           return;
@@ -91,11 +94,11 @@
 
         if((r0.x2 > r1.x1) && (r1.x2 > r0.x1)){
           if(r1.y2 < r0.y1){
-            var t = r0.y1 - r1.y2;
+            t = r0.y1 - r1.y2;
             dist.up = (t < dist.up)? t : dist.up;
           }else{  
             if(r0.y2 < r1.y1){
-              var t = r1.y1 - r0.y2;
+              t = r1.y1 - r0.y2;
               dist.down = (t < dist.down)? t : dist.down;
             }else{
               //Позволяем вылезти туда, куда короче
@@ -109,6 +112,7 @@
       }
       //Возвращает расстояние до ближайших препятствий сверху, снизу, справа и слева
       function minDistance(r){
+        var EPS = 1e-4;
         var obst = gMap.obstacles; 
         var zomb = gMap.zombies;   
         var r0 = {x1: r.x, y1: r.y, x2: r.x + r.w, y2: r.y + r.h};
@@ -128,7 +132,11 @@
           r1 = {x1: zomb[i].animation.x - zomb[i].hitRadius, y1: zomb[i].animation.y - zomb[i].hitRadius,
                 x2: zomb[i].animation.x + zomb[i].hitRadius, y2: zomb[i].animation.y + zomb[i].hitRadius};
 
-          if((r1.x1 == r0.x1)&&(r1.x2 == r0.x2)&&(r1.y1 == r0.y1)&&(r1.y2 == r0.y2))continue;//the same object
+          if( Math.abs(r1.x1 - r0.x1) < EPS && Math.abs(r1.x2 - r0.x2) < EPS && 
+              Math.abs(r1.y1 - r0.y1) < EPS && Math.abs(r1.y2 - r0.y2) < EPS ){
+            
+            continue;//the same object
+        }
 
           getDistance(r0, r1, dist);
         }    

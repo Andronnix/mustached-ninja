@@ -31,11 +31,7 @@
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
 
-      var DEBUG = false;    
-    
-      var SHOOT_TIME = 0; 
-      var PISTOL_RECHARGE = 10;
-
+      var DEBUG = false; 
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
@@ -193,8 +189,6 @@
           this.animation.x += dx;
           this.animation.y += dy;
 
-          //if(dx*dx + dy*dy == 0)console.log(dx0,dy0,md);
-
           if(DEBUG){
             stage.removeChild(DEBUG_SHAPE);
             DEBUG_SHAPE = new createjs.Shape();
@@ -239,7 +233,7 @@
           this.animation.x = x;
           this.animation.y = y;
           this.animate("run");
-          stage.addChild(this.animation);
+          stage.addChild(this.animation);      
         }
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
@@ -285,7 +279,10 @@
 
         //Запускаем слежение за игроком
         var ZZ = this;
-        this.HH = createjs.Ticker.addEventListener("tick", function(evt){if(evt.paused)return;ZZ.hunt();});
+        this.HH = createjs.Ticker.addEventListener("tick", function(evt){
+          if(evt.paused) return;
+          ZZ.hunt();
+        });
         
         this.imHit = function(id, dmg){
 
@@ -297,6 +294,7 @@
             var HH = this.HH;
             createjs.Ticker.removeEventListener("tick", HH);          
             delete zomb.splice(id,1);
+            stage.dispatchEvent("zombieKilled");
           }          
         }
       }
@@ -309,6 +307,8 @@
         this.damage = 5;
         this.healthPoints = 0;
         this.maxHealthPoints = 0;
+        this.shootDelay = 0;
+        this.shootTicker = 0;
 
         this.animation = null;
         this.shotAnimation = null;
@@ -373,6 +373,8 @@
           this.hitRadius = r.hitRadius;
           this.maxHealthPoints = r.maxHealthPoints;
           this.healthPoints = r.maxHealthPoints;
+          this.shootDelay = r.shootDelay;
+          this.shootTicker = 0;
 
           this.healthBar = new createjs.Shape();
           this.healthBar.graphics.f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10, this.maxHealthPoints, 5);
@@ -414,9 +416,10 @@
           this.shotAnimation.gotoAndPlay(arg);    
         }
         this.shoot = function(x, y, angle){
-          var recharge = PISTOL_RECHARGE;
+          var recharge = this.shootDelay;
     
-          if (SHOOT_TIME < recharge)return false; else SHOOT_TIME = 0;
+          if (this.shootTicker > 0)return false; 
+          else this.shootTicker = recharge;
           //(y1 – y2)x + (x2 – x1)y + (x1y2 – x2y1) = 0
           //var k = Math.tan(angle + Math.PI);
           /*var dx = x + 17*Math.cos(angle + 0.49);
@@ -564,7 +567,6 @@
                 g.x = 0;
                 g.y = 0;
             stage.addChild(g); 
-            console.log("-------------------");
           }
           //не убирай коменты - вдруг еще пригодится=)
           //как минимум здесь расчет правильного угла для стрельбы...
@@ -627,7 +629,7 @@
             }
           }
           
-          SHOOT_TIME++;
+          if(player.shootTicker > 0) player.shootTicker--;
 
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");
@@ -666,8 +668,6 @@
       }
     
       
-
-
       function startMenu(){
         gMap = new TILEDMap();
 
@@ -781,7 +781,6 @@
         this.y = data.y;
 
         this.spawnHandler = function(event){
-          //console.log(event);
           if(event.paused)return;
           SZ.nextSpawnTime  -= event.delta;
 
@@ -789,12 +788,16 @@
             var z = new Zombie(SZ.x, SZ.y); 
             gMap.zombies.push(z);
             SZ.spawnNumber--;
-            SZ.nextSpawnTime = SZ.spawnDelay;
+            SZ.nextSpawnTime = SZ.spawnDelay;            
+          }else{
+            if(SZ.spawnNumber === 0){
+              createjs.Ticker.removeEventListener("tick", SZ.tickListener);
+            }
           }
         }
 
         var SZ = this;
-        createjs.Ticker.addEventListener("tick", function(evt){SZ.spawnHandler(evt);});
+        this.tickListener = createjs.Ticker.addEventListener("tick", function(evt){SZ.spawnHandler(evt);});
       }
 
       //Класс многослойной карты из тайлов
@@ -876,6 +879,17 @@
               createjs.Ticker.addEventListener("tick", function(evt){
                 if(evt.paused)return;
                 stage.update();
+              });
+              stage.addEventListener("zombieKilled", function(){
+                var n = gMap.zombies.length - 1;//Количество зомбей
+                var zS = gMap.zombSpawners;
+                console.log(zS);
+                for(var i = 0, l = zS.length; i < l && n === 0; i++)
+                  n += zS[i].spawnNumber;
+                if(n === 0){
+                  //createjs.Ticker.setPaused(true);
+                  alert("You won");
+                }
               });
 
 

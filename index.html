@@ -11,7 +11,7 @@
     <script src="lib\\easeljs-0.6.0.min.js"></script>
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
     <script src="lib\\TS_vector2.js"></script>
-    <script src="lib\\loadbar.js"></script>
+    <script src="lib\\loadScreen.js"></script>
 
 
     <script>
@@ -702,12 +702,12 @@
         
         stage = new createjs.Stage("gameCanvas");         
           var tempBar = new loadBar();
-          tempBar.drawBackBar(160, 200, 320, 20)
+          tempBar.drawBackBar(WIDTH/4, HEIGHT/2, WIDTH/2, 20)
 
           var currParts = 0;
         objQueue.addEventListener("fileload", function(){
           currParts++;
-          tempBar.drawBar(160, 200, 320*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
+          tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
           //console.log(currParts);
         })
           
@@ -716,8 +716,9 @@
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
             }
-
-            init();
+            createjs.Ticker.setFPS(60);
+            CLMenu(WIDTH/2.5, HEIGHT/1.5, WIDTH/4, 50); // CompleteLoadMenu
+            //init();
         });        
         xhrGet("data\\preLoads.json", 
                 this, 
@@ -735,7 +736,7 @@
       function init() {
 
 
-        createjs.Ticker.setFPS(60);
+        //createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(evt){
           stage.update();
         });

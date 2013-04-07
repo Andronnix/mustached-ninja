@@ -11,6 +11,7 @@
     <script src="lib\\easeljs-0.6.0.min.js"></script>
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
     <script src="lib\\TS_vector2.js"></script>
+    <script src="lib\\loadScreen.js"></script>
 
 
     <script>
@@ -28,9 +29,10 @@
       var KEYCODE_D = 68;     //usefull keycode
       var KEYCODE_S = 83;     //usefull keycode
 
+      var LOAD_PARTS = 17;    //Don't ASK, i don't give a fuck why!
+      
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
-
       var DEBUG = false; 
 
       var lfHeld;       //is the user holding a turn left command
@@ -682,7 +684,7 @@
               player.animateShot("s0");
             }
           }
-          
+
           if(player.shootTicker > 0) player.shootTicker--;
 
           if(v.x * v.x + v.y * v.y == 0){
@@ -817,7 +819,7 @@
       }
 
       function startMenu(){
-        gMap = new TILEDMap();
+        //gMap = new TILEDMap();
 
         var menu = ["Large Map", "Test map 4", "Test map 5"];
         var menuMaps = ["omgLargeMap", "testMap4", "testMap5"];
@@ -844,14 +846,27 @@
       //Загрузка всех ресурсов, и запуск функции init()
       function load(){
         var preLoads;
-        var objQueue = new createjs.LoadQueue();
 
+        var objQueue = new createjs.LoadQueue();
+        //loadScreen add
+        init();
+              
+        var tempBar = new loadBar();
+        tempBar.drawBackBar(WIDTH/4, HEIGHT/2, WIDTH/2, 20)
+
+        var currParts = 0;
+        objQueue.addEventListener("fileload", function(){
+        currParts++;
+        tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
+         //console.log(currParts);
+        })
+          
+        //end loadScreen
         objQueue.addEventListener("complete", function(){             
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
             }
-
-            init();
+            CLMenu(WIDTH/2.5, HEIGHT/1.5, WIDTH/4, 50, tempBar); // CompleteLoadMenu
         });        
         xhrGet("data\\preLoads.json", 
                 this, 
@@ -866,6 +881,7 @@
       }
       
       //Создаем канвас, грузим карту, игрока, зомбей, запускаем
+
       function init() {
 
         var canvas = document.createElement("canvas");
@@ -880,7 +896,7 @@
           stage.update();
         });
 
-        startMenu();
+        //startMenu();
       }
       
 

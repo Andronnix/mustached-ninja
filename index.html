@@ -143,6 +143,37 @@
       }
 
 
+      function TextAnimation(owner, text, color){
+        this.timer = 400;//animation ticks
+        this.owner = owner;
+        this.text = null;
+        var self = this;
+        this.animator = function(event){
+          this.timer -= event.delta;
+          if(this.timer < 0){
+            stage.removeChild(this.text);
+            stage.removeEventListener("tick", this.eL);
+            this.owner.textAnimation = null;
+            return;
+          }
+          this.text.y -= 1;
+          this.text.alpha -= 0.009;
+        }
+        this.load = function(txt, color){
+          this.text = new createjs.Text(txt, "bold 14px Arial", color);
+          this.text.x = this.owner.animation.x;
+          this.text.y = this.owner.animation.y - this.owner.hitRadius;
+          this.eL = createjs.Ticker.addEventListener("tick", function(evt){self.animator(evt);});
+          this.owner.textAnimation = this;
+          stage.addChild(this.text);
+        }
+        this.move = function(dx,dy){
+          this.text.x += dx;
+          this.text.y += dy;
+        }
+        this.load(text, color);
+      }
+
       //Класс зомби
       function Zombie(x, y){
         x = x || 0;
@@ -155,6 +186,8 @@
         this.attackDelay = 0;
 
         this.animation = null;
+        this.textAnimation = null;
+
         this.hitRadius = 0;
         this.hitPoints = [];
         for(var i = 0; i<2; i++)this.hitPoints[i] = {x:0, y:0};
@@ -163,9 +196,13 @@
 
         //небезопасный телепорт
         this.moveTo = function(x, y){
-
+          var x0 = this.animation.x;
+          var y0 = this.animation.y;
           this.animation.x = x;
           this.animation.y = y;
+          if(this.textAnimation != null){
+            this.textAnimation.move(x - x0, y - y0);
+          }
 
           if(DEBUG){
             this.hitBox.x = this.animation.x;
@@ -190,6 +227,9 @@
 
           this.animation.x += dx;
           this.animation.y += dy;
+          if(this.textAnimation != null){
+            this.textAnimation.move(dx, dy);
+          }
 
           if(DEBUG){
             stage.removeChild(DEBUG_SHAPE);
@@ -293,7 +333,9 @@
             createjs.Ticker.removeEventListener("tick", HH);          
             delete zomb.splice(id,1);
             stage.dispatchEvent("zombieKilled");
-          }          
+            return;
+          }
+          var t = new TextAnimation(this, "-" + dmg, "#e00");
         }
       }
 
@@ -310,6 +352,7 @@
 
         this.animation = null;
         this.shotAnimation = null;
+        this.textAnimation = null;
         this.hitRadius = 0;
         this.hitBox = null;
         this.healthBar = null;
@@ -317,6 +360,8 @@
 
         //not safe teleport
         this.moveTo = function(x, y){        
+          var x0 = this.animation.x;
+          var y0 = this.animation.y;
           
           this.animation.x = x;
           this.animation.y = y;
@@ -324,6 +369,9 @@
           this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
           this.healthBar.x = x;
           this.healthBar.y = y;
+          if(this.textAnimation != null){
+            this.textAnimation.move(x0 - x, y0 - y);
+          }
 
           if(DEBUG){
             this.hitBox.x = this.animation.x;
@@ -349,6 +397,9 @@
           this.shotAnimation.y = this.animation.y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
           this.healthBar.x += dx;
           this.healthBar.y += dy;
+          if(this.textAnimation != null){
+            this.textAnimation.move(dx, dy);
+          }
 
           if(DEBUG){
             stage.removeChild(DEBUG_SHAPE);
@@ -444,7 +495,6 @@
             var cosAng = s.dot(z)/((s.length()*z.length()));
             if (cosAng < 0)return 9001;
             var sinAng = Math.sqrt(1-cosAng*cosAng);
-            //console.log(sinAng*z.length());
             return sinAng*z.length();
           };
           
@@ -595,6 +645,11 @@
           if(this.healthPoints <= 0) return;      
           this.healthPoints -= dmg;
           if(this.healthPoints > this.maxHealthPoints) this.healthPoints = this.maxHealthPoints;
+          var color;
+          if(dmg >= 0) var t = new TextAnimation(this, "-" + dmg, "#e00");
+          else var t = new TextAnimation(this, "+" + (-dmg), "#0c0");
+
+          
 
           this.healthBar.graphics.c().s(0).f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10,
                                                     this.healthPoints, 5)
@@ -665,6 +720,7 @@
         }        
         this.loadJSON();
       }
+
     
       function Bonus(type, data){
         this.type = null;
@@ -702,11 +758,9 @@
           getDistance(r, pr, dist);
 
           if(dist.up + dist.down + dist.left + dist.right < 4){//Касаемся игрока
-            console.log("touch");
             if(this.type == "medkit"){
               //Нанесем отрицательный урон, то же, что и вылечить
               player.hit(- this.value);
-
             }             
             //Удаляем себя, бонус использован
             stage.removeChild(this.animation);
@@ -949,7 +1003,6 @@
               stage.addEventListener("zombieKilled", function(){
                 var n = gMap.zombies.length - 1;//Количество зомбей
                 var zS = gMap.zombSpawners;
-                //console.log(zS);
                 for(var i = 0, l = zS.length; i < l && n === 0; i++)
                   n += zS[i].spawnNumber;
                 if(n === 0){

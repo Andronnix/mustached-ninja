@@ -98,10 +98,12 @@
               dist.down = (t < dist.down)? t : dist.down;
             }else{
               //Позволяем вылезти туда, куда короче
-              if(r0.y2 - r1.y1 > r1.y2 - r0.y1)
+              if(r0.y2 - r1.y1 > r1.y2 - r0.y1){
                 dist.up = 0; //нельзя вверх
-              else
+              }else if(r0.y2 - r1.y1 < r1.y2 - r0.y1){
                 dist.down = 0; // нельзя вниз
+              }
+              
             }
           }
         }
@@ -264,10 +266,6 @@
             if(this.attackTicker <= 0){
               player.hit(this.damage);
               this.attackTicker = this.attackDelay;
-              /*
-              var HH = this.HH;
-              createjs.Ticker.removeEventListener("tick", HH);
-              */
             }
           }
 
@@ -596,6 +594,7 @@
         this.hit = function(dmg){    
           if(this.healthPoints <= 0) return;      
           this.healthPoints -= dmg;
+          if(this.healthPoints > this.maxHealthPoints) this.healthPoints = this.maxHealthPoints;
 
           this.healthBar.graphics.c().s(0).f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10,
                                                     this.healthPoints, 5)
@@ -667,7 +666,102 @@
         this.loadJSON();
       }
     
-      
+      function Bonus(type, data){
+        this.type = null;
+        this.animation = null;
+        this.width = 0;
+        this.height = 0;
+        this.value = 0;
+
+        this.load = function(type, data){
+          this.type = type;
+          var bData = resources["bonusJSON"][type];//bonus parameters
+
+          var b = new createjs.Bitmap(resources["bonus"]);
+          b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
+          b.regX = bData.width/2;
+          b.regY = bData.height/2;
+          b.x = data.x;
+          b.y = data.y;
+          this.width = bData.width;
+          this.height = bData.height;
+          this.value = bData.value;
+          this.animation = b;
+          stage.addChild(b);
+
+          gMap.bonuses.push(this);          
+        }
+        this.touchCheck = function(event){
+          var r = {x1: this.animation.x - this.width/2, y1: this.animation.y - this.height/2,
+                   x2: this.animation.x + this.width/2, y2: this.animation.y + this.height/2};
+
+          var pr = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
+                   x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};
+
+          var dist = {up:1, down:1, left:1, right:1}; //Все что угодно, кроме нуля
+          getDistance(r, pr, dist);
+
+          if(dist.up + dist.down + dist.left + dist.right < 4){//Касаемся игрока
+            console.log("touch");
+            if(this.type == "medkit"){
+              //Нанесем отрицательный урон, то же, что и вылечить
+              player.hit(- this.value);
+
+            }             
+            //Удаляем себя, бонус использован
+            stage.removeChild(this.animation);
+            var bs = gMap.bonuses;
+            for(var i = 0; i < bs.length; i++)
+              if(bs[i] == this) break;
+
+            var tH = this.tickHandler;
+            createjs.Ticker.removeEventListener("tick", tH);
+            delete bs.splice(i,1);
+          }          
+
+        }
+
+        this.load(type, data);
+        var self = this;
+        this.tickHandler = createjs.Ticker.addEventListener("tick", function(evt){
+          if(evt.paused) return;
+          self.touchCheck();
+        });
+
+      }
+
+      //Класс зомби спаунера
+      //Передаем туда структуру с информацией о позиции, времени первого спауна, количестве спанов      
+      function ZombieSpawner(data){
+        this.spawnDelay = data.properties.delay;
+        this.startTimeMs = data.properties.startTimeMs;
+        this.spawnNumber = data.properties.number;
+
+        this.nextSpawnTime = this.startTimeMs;
+
+        this.x = data.x;
+        this.y = data.y;
+
+        this.spawnHandler = function(event){
+          if(event.paused)return;
+          SZ.nextSpawnTime  -= event.delta;
+
+          if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
+            var z = new Zombie(SZ.x, SZ.y); 
+            gMap.zombies.push(z);
+            SZ.spawnNumber--;
+            SZ.nextSpawnTime = SZ.spawnDelay;            
+          }else{
+            if(SZ.spawnNumber === 0){
+              createjs.Ticker.removeEventListener("tick", SZ.tickListener);
+            }
+          }
+        }
+
+        var SZ = this;
+        this.tickListener = createjs.Ticker.addEventListener("tick", function(evt){SZ.spawnHandler(evt);});
+      }
+
       function startMenu(){
         gMap = new TILEDMap();
 
@@ -768,37 +862,6 @@
         }
       }
 
-      //Класс зомби спаунера
-      //Передаем туда структуру с информацией о позиции, времени первого спауна, количестве спанов      
-      function zombieSpawner(data){
-        this.spawnDelay = data.properties.delay;
-        this.startTimeMs = data.properties.startTimeMs;
-        this.spawnNumber = data.properties.number;
-
-        this.nextSpawnTime = this.startTimeMs;
-
-        this.x = data.x;
-        this.y = data.y;
-
-        this.spawnHandler = function(event){
-          if(event.paused)return;
-          SZ.nextSpawnTime  -= event.delta;
-
-          if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
-            var z = new Zombie(SZ.x, SZ.y); 
-            gMap.zombies.push(z);
-            SZ.spawnNumber--;
-            SZ.nextSpawnTime = SZ.spawnDelay;            
-          }else{
-            if(SZ.spawnNumber === 0){
-              createjs.Ticker.removeEventListener("tick", SZ.tickListener);
-            }
-          }
-        }
-
-        var SZ = this;
-        this.tickListener = createjs.Ticker.addEventListener("tick", function(evt){SZ.spawnHandler(evt);});
-      }
 
       //Класс многослойной карты из тайлов
       var TILEDMap = function(){
@@ -815,6 +878,9 @@
           //Zombies
           this.zombies = [];
           this.playerSpawn = null;
+
+          //Array of bonus objects
+          this.bonuses = [];          
 
           // tilesets stores each individual tileset
           // from the map.json's 'tilesets' Array.
@@ -883,7 +949,7 @@
               stage.addEventListener("zombieKilled", function(){
                 var n = gMap.zombies.length - 1;//Количество зомбей
                 var zS = gMap.zombSpawners;
-                console.log(zS);
+                //console.log(zS);
                 for(var i = 0, l = zS.length; i < l && n === 0; i++)
                   n += zS[i].spawnNumber;
                 if(n === 0){
@@ -1114,7 +1180,7 @@
                     for (var i = data.length - 1; i >= 0; i--) {
 
                       if(data[i].type == "zombSpawn"){
-                        var spawner = new zombieSpawner(data[i]);
+                        var spawner = new ZombieSpawner(data[i]);
                         this.zombSpawners.push(spawner);
                         continue;
                       }
@@ -1126,16 +1192,17 @@
                       }
 
 
-                      //Not zombie, not 
-                      var bData = resources["bonusJSON"][data[i].type];//bonus parameters
+                      // //Not zombie, not 
+                      // var bData = resources["bonusJSON"][data[i].type];//bonus parameters
                       
-                      var b = new createjs.Bitmap(resources["bonus"]);
-                      b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
-                      b.x = data[i].x - bData.width/2;
-                      b.y = data[i].y - bData.height/2;
-                      this.tiles.push(b);
-                      stage.addChild(b);
-                      
+                      // var b = new createjs.Bitmap(resources["bonus"]);
+                      // b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
+                      // b.x = data[i].x - bData.width/2;
+                      // b.y = data[i].y - bData.height/2;
+                      // this.tiles.push(b);
+                      // stage.addChild(b);
+
+                      var b = new Bonus(data[i].type, data[i]);
                     };
                   }
               }
@@ -1197,6 +1264,12 @@
               zSpawn[i].x += dx;
               zSpawn[i].y += dy;
             };
+            
+            var bonuses = this.bonuses;
+            for (i = bonuses.length - 1; i >= 0; i--) {
+              bonuses[i].animation.x += dx;
+              bonuses[i].animation.y += dy;
+            };            
 
 
             this.position.x +=dx;

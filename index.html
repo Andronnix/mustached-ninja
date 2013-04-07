@@ -37,7 +37,7 @@
       var DEBUG = false;    
     
       var SHOOT_TIME = 0; 
-      var PISTOL_RECHARGE = 10;
+      var PISTOL_RECHARGE = 40;
 
 
       var lfHeld;       //is the user holding a turn left command
@@ -664,7 +664,7 @@
 
 
       function startMenu(){
-        gMap = new TILEDMap();
+        //gMap = new TILEDMap();
 
         var menu = ["Large Map", "Test map 4", "Test map 5"];
         var menuMaps = ["omgLargeMap", "testMap4", "testMap5"];
@@ -694,21 +694,16 @@
 
         var objQueue = new createjs.LoadQueue();
         //loadScreen add
-        var canvas = document.createElement("canvas");
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
-        canvas.id = "gameCanvas";
-        body.appendChild(canvas);
-        
-        stage = new createjs.Stage("gameCanvas");         
-          var tempBar = new loadBar();
-          tempBar.drawBackBar(WIDTH/4, HEIGHT/2, WIDTH/2, 20)
+        init();
+              
+        var tempBar = new loadBar();
+        tempBar.drawBackBar(WIDTH/4, HEIGHT/2, WIDTH/2, 20)
 
-          var currParts = 0;
+        var currParts = 0;
         objQueue.addEventListener("fileload", function(){
-          currParts++;
-          tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
-          //console.log(currParts);
+        currParts++;
+        tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
+         //console.log(currParts);
         })
           
         //end loadScreen
@@ -716,9 +711,7 @@
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
             }
-            createjs.Ticker.setFPS(60);
-            CLMenu(WIDTH/2.5, HEIGHT/1.5, WIDTH/4, 50); // CompleteLoadMenu
-            //init();
+            CLMenu(WIDTH/2.5, HEIGHT/1.5, WIDTH/4, 50, tempBar); // CompleteLoadMenu
         });        
         xhrGet("data\\preLoads.json", 
                 this, 
@@ -733,15 +726,22 @@
       }
       
       //Создаем канвас, грузим карту, игрока, зомбей, запускаем
+
       function init() {
 
+        var canvas = document.createElement("canvas");
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+        canvas.id = "gameCanvas";
+        body.appendChild(canvas);
 
-        //createjs.Ticker.setFPS(60);
+        stage = new createjs.Stage("gameCanvas");
+        createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(evt){
           stage.update();
         });
 
-        startMenu();
+        //startMenu();
       }
       
 

@@ -28,18 +28,23 @@
       var KEYCODE_A = 65;     //usefull keycode
       var KEYCODE_D = 68;     //usefull keycode
       var KEYCODE_S = 83;     //usefull keycode
+      var KEYCODE_P = 80;
+      var KEYCODE_ESC = 27;
 
       var LOAD_PARTS = 17;    //Don't ASK, i don't give a fuck why!
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
       var DEBUG = false; 
+      
+      var paused = false;
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
       var fwdHeld;      //is the user holding a forward command
       var bwdHeld;      //is the user holding a backward command
       var shootHeld;    //is the user holding a shoot command
+      var pauseHeld;    //is the user holding a pause command
 
 
       var body = document.getElementById("body");
@@ -47,6 +52,8 @@
       var player;
       var resources = [];
 
+      var pause;
+      
       var gMap;
 
       document.onkeydown = handleKeyDown;
@@ -913,6 +920,8 @@
           case KEYCODE_UP:  fwdHeld = true; return false;
           case KEYCODE_S:
           case KEYCODE_DOWN:  bwdHeld = true; return false;
+          case KEYCODE_ESC:
+          case KEYCODE_P:  pause = new gamePause(); return false;
         }
       }
 
@@ -928,7 +937,9 @@
           case KEYCODE_W:
           case KEYCODE_UP:  fwdHeld = false; break;
           case KEYCODE_S:
-          case KEYCODE_DOWN:  bwdHeld = false; break;          
+          case KEYCODE_DOWN:  bwdHeld = false; break;       
+          case KEYCODE_ESC:
+          case KEYCODE_P:  pauseHeld = false; break;          
         }
       }
 

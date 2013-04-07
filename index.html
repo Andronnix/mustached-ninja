@@ -15,6 +15,19 @@
 
 
     <script>
+<<<<<<< HEAD
+      var WIDTH = 640, HEIGHT = 640;
+      
+      //usefull keycodes
+      var KEYCODE_ENTER = 13;
+      var KEYCODE_SPACE = 32;
+      var KEYCODE_UP = 38, KEYCODE_LEFT = 37, KEYCODE_RIGHT = 39, KEYCODE_DOWN = 40; 
+      var KEYCODE_W = 87, KEYCODE_A = 65, KEYCODE_D = 68, KEYCODE_S = 83;
+      var KEYCODE_Q = 81, KEYCODE_E = 69;
+      var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
+
+      var LOAD_PARTS = 16;
+=======
       var WIDTH = 640;
       var HEIGHT = 640;
 
@@ -28,23 +41,24 @@
       var KEYCODE_A = 65;     //usefull keycode
       var KEYCODE_D = 68;     //usefull keycode
       var KEYCODE_S = 83;     //usefull keycode
+      var KEYCODE_P = 80;
+      var KEYCODE_ESC = 27;
 
       var LOAD_PARTS = 17;    //Don't ASK, i don't give a fuck why!
+>>>>>>> 3a76ccaed9dcb9935d32aae9d092f2bec5f88c4c
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
-
-      var DEBUG = false;    
-    
-      var SHOOT_TIME = 0; 
-      var PISTOL_RECHARGE = 40;
-
+      var DEBUG = false; 
+      
+      var paused = false;
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
       var fwdHeld;      //is the user holding a forward command
       var bwdHeld;      //is the user holding a backward command
       var shootHeld;    //is the user holding a shoot command
+      var pauseHeld;    //is the user holding a pause command
 
 
       var body = document.getElementById("body");
@@ -52,6 +66,8 @@
       var player;
       var resources = [];
 
+      var pause;
+      
       var gMap;
 
       document.onkeydown = handleKeyDown;
@@ -72,21 +88,24 @@
 
       //Функция записывает расстояние между прямоугольниками в dist, если оно меньше, чем текущее
       function getDistance(r0, r1, dist){
-
+        var t = 0;
         if((r0.y2 > r1.y1) && (r1.y2 > r0.y1)){
           if(r1.x2 < r0.x1){
-            var t = r0.x1 - r1.x2;
+            t = r0.x1 - r1.x2;
             dist.left = (t < dist.left)? t : dist.left;
           }else{
             if(r0.x2 < r1.x1){
-              var t = r1.x1 - r0.x2;
+              t = r1.x1 - r0.x2;
               dist.right = (t < dist.right)? t : dist.right;
             }else{
-              //Intersection
+              //Позволяем вылезти туда, куда короче
               if(r0.x2 - r1.x1 > r1.x2 - r0.x1)
                 dist.left = 0;
-              else
-                dist.right = 0;
+              else{
+                if(r0.x2 - r1.x1 < r1.x2 - r0.x1){
+                  dist.right = 0;
+                }
+              }
             }
           }
           return;
@@ -94,24 +113,27 @@
 
         if((r0.x2 > r1.x1) && (r1.x2 > r0.x1)){
           if(r1.y2 < r0.y1){
-            var t = r0.y1 - r1.y2;
+            t = r0.y1 - r1.y2;
             dist.up = (t < dist.up)? t : dist.up;
           }else{  
             if(r0.y2 < r1.y1){
-              var t = r1.y1 - r0.y2;
+              t = r1.y1 - r0.y2;
               dist.down = (t < dist.down)? t : dist.down;
             }else{
               //Позволяем вылезти туда, куда короче
-              if(r0.y2 - r1.y1 > r1.y2 - r0.y1)
+              if(r0.y2 - r1.y1 > r1.y2 - r0.y1){
                 dist.up = 0; //нельзя вверх
-              else
+              }else if(r0.y2 - r1.y1 < r1.y2 - r0.y1){
                 dist.down = 0; // нельзя вниз
+              }
+              
             }
           }
         }
       }
       //Возвращает расстояние до ближайших препятствий сверху, снизу, справа и слева
       function minDistance(r){
+        var EPS = 1e-4;
         var obst = gMap.obstacles; 
         var zomb = gMap.zombies;   
         var r0 = {x1: r.x, y1: r.y, x2: r.x + r.w, y2: r.y + r.h};
@@ -131,7 +153,11 @@
           r1 = {x1: zomb[i].animation.x - zomb[i].hitRadius, y1: zomb[i].animation.y - zomb[i].hitRadius,
                 x2: zomb[i].animation.x + zomb[i].hitRadius, y2: zomb[i].animation.y + zomb[i].hitRadius};
 
-          if((r1.x1 == r0.x1)&&(r1.x2 == r0.x2)&&(r1.y1 == r0.y1)&&(r1.y2 == r0.y2))continue;//the same object
+          if( Math.abs(r1.x1 - r0.x1) < EPS && Math.abs(r1.x2 - r0.x2) < EPS && 
+              Math.abs(r1.y1 - r0.y1) < EPS && Math.abs(r1.y2 - r0.y2) < EPS ){
+            
+            continue;//the same object
+        }
 
           getDistance(r0, r1, dist);
         }    
@@ -139,6 +165,40 @@
         return dist;
       }
 
+      function TextAnimation(owner, text, color, timer){
+        this.timer = timer || 400;//animation ticks
+        this.owner = owner;
+        this.text = null;
+        var self = this;
+        this.animator = function(event){
+          this.timer -= event.delta;
+          if(this.timer < 0){
+
+            stage.removeChild(this.text);
+            var e = this.eL;
+            createjs.Ticker.removeEventListener("tick", e);
+            var tA = this.owner.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              if(tA[i] == this) tA.splice(i, 1);
+            return;
+          }
+          this.text.y -= 1;
+          this.text.alpha -= 0.009;
+        }
+        this.load = function(txt, color){
+          this.text = new createjs.Text(txt, "bold 14px Arial", color);
+          this.text.x = this.owner.animation.x;
+          this.text.y = this.owner.animation.y - this.owner.hitRadius;
+          this.eL = createjs.Ticker.addEventListener("tick", function(evt){self.animator(evt);});
+          this.owner.textAnimation.push(this);
+          stage.addChild(this.text);
+        }
+        this.move = function(dx,dy){
+          this.text.x += dx;
+          this.text.y += dy;
+        }
+        this.load(text, color);
+      }
 
       //Класс зомби
       function Zombie(x, y){
@@ -152,6 +212,8 @@
         this.attackDelay = 0;
 
         this.animation = null;
+        this.textAnimation = [];
+
         this.hitRadius = 0;
         this.hitPoints = [];
         for(var i = 0; i<2; i++)this.hitPoints[i] = {x:0, y:0};
@@ -160,9 +222,16 @@
 
         //небезопасный телепорт
         this.moveTo = function(x, y){
-
+          var x0 = this.animation.x;
+          var y0 = this.animation.y;
           this.animation.x = x;
           this.animation.y = y;
+          if(this.textAnimation != null){
+            var dx = x - x0, dy = y - y0;
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
+          }
 
           if(DEBUG){
             this.hitBox.x = this.animation.x;
@@ -187,8 +256,11 @@
 
           this.animation.x += dx;
           this.animation.y += dy;
-
-          //if(dx*dx + dy*dy == 0)console.log(dx0,dy0,md);
+          if(this.textAnimation != null){
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
+          }
 
           if(DEBUG){
             stage.removeChild(DEBUG_SHAPE);
@@ -234,7 +306,7 @@
           this.animation.x = x;
           this.animation.y = y;
           this.animate("run");
-          stage.addChild(this.animation);
+          stage.addChild(this.animation);      
         }
         this.animate = function(arg){
           this.animation.gotoAndPlay(arg);    
@@ -265,10 +337,6 @@
             if(this.attackTicker <= 0){
               player.hit(this.damage);
               this.attackTicker = this.attackDelay;
-              /*
-              var HH = this.HH;
-              createjs.Ticker.removeEventListener("tick", HH);
-              */
             }
           }
 
@@ -280,7 +348,11 @@
 
         //Запускаем слежение за игроком
         var ZZ = this;
-        this.HH = createjs.Ticker.addEventListener("tick", function(evt){if(evt.paused)return;ZZ.hunt();});
+        this.HH = createjs.Ticker.addEventListener("tick", function(evt){
+          if(evt.paused) 
+            return;
+          ZZ.hunt();
+        });
         
         this.imHit = function(id, dmg){
 
@@ -292,7 +364,10 @@
             var HH = this.HH;
             createjs.Ticker.removeEventListener("tick", HH);          
             delete zomb.splice(id,1);
-          }          
+            stage.dispatchEvent("zombieKilled");
+            return;
+          }
+          var t = new TextAnimation(this, "-" + dmg, "#e00");
         }
       }
 
@@ -301,19 +376,26 @@
         x = x || 0;
         y = y || 0;
         this.speed = 3;
-        this.damage = 5;
+        this.weapon = null;
         this.healthPoints = 0;
         this.maxHealthPoints = 0;
+        this.shootTicker = 0;
 
         this.animation = null;
         this.shotAnimation = null;
+        this.textAnimation = [];
         this.hitRadius = 0;
         this.hitBox = null;
         this.healthBar = null;
 
+        this.weapons = [];
+        this.currentWeaponID = 0;
+
 
         //not safe teleport
         this.moveTo = function(x, y){        
+          var x0 = this.animation.x;
+          var y0 = this.animation.y;
           
           this.animation.x = x;
           this.animation.y = y;
@@ -321,6 +403,12 @@
           this.shotAnimation.y = y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
           this.healthBar.x = x;
           this.healthBar.y = y;
+          if(this.textAnimation != null){
+            var dx = x - x0, dy = y - y0;
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
+          }
 
           if(DEBUG){
             this.hitBox.x = this.animation.x;
@@ -346,6 +434,11 @@
           this.shotAnimation.y = this.animation.y + 23*Math.sin(this.animation.rotation*Math.PI/180 - Math.PI/2 + 0.36);
           this.healthBar.x += dx;
           this.healthBar.y += dy;
+          if(this.textAnimation != null){
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
+          }
 
           if(DEBUG){
             stage.removeChild(DEBUG_SHAPE);
@@ -368,6 +461,8 @@
           this.hitRadius = r.hitRadius;
           this.maxHealthPoints = r.maxHealthPoints;
           this.healthPoints = r.maxHealthPoints;
+          this.shootTicker = 0;
+          this.weapons = r.weapons;
 
           this.healthBar = new createjs.Shape();
           this.healthBar.graphics.f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10, this.maxHealthPoints, 5);
@@ -399,6 +494,22 @@
           stage.addChild(this.animation);
           stage.addChild(this.shotAnimation);
           createjs.Ticker.addEventListener("tick", this.handleTick);
+          this.changeWeapon(0);
+        }
+
+        this.nextWeapon = function(){
+          var n = (this.currentWeaponID + 1) % this.weapons.length;
+          this.changeWeapon(n);
+        }
+        this.prevWeapon = function(){
+          var n = (this.currentWeaponID - 1 + this.weapons.length) % this.weapons.length;
+          this.changeWeapon(n);
+        }
+        this.changeWeapon = function(n){
+          var w = this.weapons[n];
+          this.currentWeaponID = n;
+          this.weapon = w;
+          var t = new TextAnimation(this, w.name, "#000");
         }
 
         this.animate = function(arg){
@@ -409,9 +520,24 @@
           this.shotAnimation.gotoAndPlay(arg);    
         }
         this.shoot = function(x, y, angle){
-          var recharge = PISTOL_RECHARGE;
+          var recharge = this.weapon.shootDelay;
     
-          if (SHOOT_TIME < recharge)return false; else SHOOT_TIME = 0;
+          if (this.shootTicker > 0)return false; 
+          else this.shootTicker = recharge;
+
+          var weapon = this.weapon;
+
+          if(weapon.ammo == 0){
+            var t = new TextAnimation(this, "Out of ammo", "#e00");
+            return false;
+          }
+
+          //-1 == infinite ammo
+          if(weapon.ammo != -1) {
+            weapon.ammo--;
+          }
+          var scatter = weapon.scatter;
+          angle += - scatter/2 + Math.random()*scatter;
           //(y1 – y2)x + (x2 – x1)y + (x1y2 – x2y1) = 0
           //var k = Math.tan(angle + Math.PI);
           /*var dx = x + 17*Math.cos(angle + 0.49);
@@ -438,7 +564,6 @@
             var cosAng = s.dot(z)/((s.length()*z.length()));
             if (cosAng < 0)return 9001;
             var sinAng = Math.sqrt(1-cosAng*cosAng);
-            //console.log(sinAng*z.length());
             return sinAng*z.length();
           };
           
@@ -541,7 +666,8 @@
             }
           }
           if (closestDistObst > closestDist){
-            gMap.zombies[closestZ].imHit(closestZ, player.damage);
+            var dmgDealt = player.weapon.damage + Math.round( - player.weapon.damageDelta /2 + Math.random()*player.weapon.damageDelta);
+            gMap.zombies[closestZ].imHit(closestZ, dmgDealt);
           }else{
             hitPoints[0].x = gMap.obstacles[closestObst].hitPoints[0].x;
             hitPoints[0].y = gMap.obstacles[closestObst].hitPoints[0].y;
@@ -559,12 +685,11 @@
                 g.x = 0;
                 g.y = 0;
             stage.addChild(g); 
-            console.log("-------------------");
           }
           //не убирай коменты - вдруг еще пригодится=)
           //как минимум здесь расчет правильного угла для стрельбы...
           
-          var length = 80 + Math.random()*50;
+          var length = 50 + 2 * Math.random() * weapon.damage;
           var s = new createjs.Shape();
           var da = Math.atan2(stage.mouseY - dy, stage.mouseX - dx);
           var dr = 5 + Math.random()*10;
@@ -589,13 +714,20 @@
         this.hit = function(dmg){    
           if(this.healthPoints <= 0) return;      
           this.healthPoints -= dmg;
+          if(this.healthPoints > this.maxHealthPoints) this.healthPoints = this.maxHealthPoints;
+          var color;
+          if(dmg >= 0) var t = new TextAnimation(this, "-" + dmg, "#e00");
+          else var t = new TextAnimation(this, "+" + (-dmg), "#0c0");
+
+          
 
           this.healthBar.graphics.c().s(0).f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10,
                                                     this.healthPoints, 5)
                                  .s("#f00").f(0).r( - this.maxHealthPoints/2, - this.hitRadius - 10,
                                                     this.maxHealthPoints, 5);
-          if(this.healthPoints <= 0)//умереть
-            alert('You lost!');
+          if(this.healthPoints <= 0){//умереть            
+            stage.dispatchEvent("playerDied");
+          }
         }
         
         this.handleTick = function(evt) {
@@ -621,9 +753,9 @@
               player.animateShot("s0");
             }
           }
-          
-          SHOOT_TIME++;          
-          
+
+          if(player.shootTicker > 0) player.shootTicker--;
+
           if(v.x * v.x + v.y * v.y == 0){
             player.animate("stay");
           }else{
@@ -631,13 +763,11 @@
               player.animate("run");
           }    
 
-          var x0 = player.animation.x;
-          var y0 = player.animation.y;
+          var x0 = player.animation.x, y0 = player.animation.y;
 
           player.move(v.x, v.y);
 
-          var x1 = player.animation.x;
-          var y1 = player.animation.y;          
+          var x1 = player.animation.x, y1 = player.animation.y;          
 
           var mapMove = {dx:0, dy:0};
           var mvC = 0.4; // Константа, поределяющая перемещение карты
@@ -659,9 +789,106 @@
         }        
         this.loadJSON();
       }
-    
-      
 
+    
+      function Bonus(type, data){
+        this.type = null;
+        this.animation = null;
+        this.width = 0;
+        this.height = 0;
+        this.value = 0;
+
+        this.load = function(type, data){
+          this.type = type;
+          var bData = resources["bonusJSON"][type];//bonus parameters
+
+          var b = new createjs.Bitmap(resources["bonus"]);
+          b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
+          b.regX = bData.width/2;
+          b.regY = bData.height/2;
+          b.x = data.x;
+          b.y = data.y;
+          this.width = bData.width;
+          this.height = bData.height;
+          this.value = bData.value;
+          this.animation = b;
+          stage.addChild(b);
+
+          gMap.bonuses.push(this);          
+        }
+        this.touchCheck = function(event){
+          var r = {x1: this.animation.x - this.width/2, y1: this.animation.y - this.height/2,
+                   x2: this.animation.x + this.width/2, y2: this.animation.y + this.height/2};
+
+          var pr = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
+                   x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};
+
+          var dist = {up:1, down:1, left:1, right:1}; //Все что угодно, кроме нуля
+          getDistance(r, pr, dist);
+
+          if(dist.up + dist.down + dist.left + dist.right < 4){//Касаемся игрока
+            if(this.type == "medkit"){
+              //Нанесем отрицательный урон, то же, что и вылечить
+              player.hit(- this.value);
+            }
+            if(this.type == "ammo"){
+              //50 патронов для автомата и 10 для снайперки, пистолет с бесконечными
+              player.weapons[1].ammo += 50;
+              player.weapons[2].ammo += 10;
+              var t = TextAnimation(player, "Ammo", "#0e0");
+            }   
+            //Удаляем себя, бонус использован
+            stage.removeChild(this.animation);
+            var bs = gMap.bonuses;
+            for(var i = 0; i < bs.length; i++)
+              if(bs[i] == this) break;
+
+            var tH = this.tickHandler;
+            createjs.Ticker.removeEventListener("tick", tH);
+            delete bs.splice(i,1);
+          }          
+
+        }
+
+        this.load(type, data);
+        var self = this;
+        this.tickHandler = createjs.Ticker.addEventListener("tick", function(evt){
+          if(evt.paused) return;
+          self.touchCheck();
+        });
+      }
+
+      //Класс зомби спаунера
+      //Передаем туда структуру с информацией о позиции, времени первого спауна, количестве спанов      
+      function ZombieSpawner(data){
+        this.spawnDelay = data.properties.delay;
+        this.startTimeMs = data.properties.startTimeMs;
+        this.spawnNumber = data.properties.number;
+
+        this.nextSpawnTime = this.startTimeMs;
+
+        this.x = data.x;
+        this.y = data.y;
+
+        this.spawnHandler = function(event){
+          if(event.paused)return;
+          SZ.nextSpawnTime  -= event.delta;
+
+          if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
+            var z = new Zombie(SZ.x, SZ.y); 
+            gMap.zombies.push(z);
+            SZ.spawnNumber--;
+            SZ.nextSpawnTime = SZ.spawnDelay;            
+          }else{
+            if(SZ.spawnNumber === 0){
+              createjs.Ticker.removeEventListener("tick", SZ.tickListener);
+            }
+          }
+        }
+
+        var SZ = this;
+        this.tickListener = createjs.Ticker.addEventListener("tick", function(evt){SZ.spawnHandler(evt);});
+      }
 
       function startMenu(){
         //gMap = new TILEDMap();
@@ -726,7 +953,6 @@
       }
       
       //Создаем канвас, грузим карту, игрока, зомбей, запускаем
-
       function init() {
 
         var canvas = document.createElement("canvas");
@@ -739,6 +965,12 @@
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(evt){
           stage.update();
+        });
+        stage.addEventListener("stagemousedown", function(){
+          shootHeld = true;
+        });
+        stage.addEventListener("stagemouseup", function(){
+          shootHeld = false;
         });
 
         //startMenu();
@@ -758,6 +990,16 @@
           case KEYCODE_UP:  fwdHeld = true; return false;
           case KEYCODE_S:
           case KEYCODE_DOWN:  bwdHeld = true; return false;
+<<<<<<< HEAD
+          case KEYCODE_Q: player.prevWeapon(); return false;
+          case KEYCODE_E: player.nextWeapon(); return false;
+          case KEYCODE_1: player.changeWeapon(0); return false;
+          case KEYCODE_2: player.changeWeapon(1); return false;
+          case KEYCODE_3: player.changeWeapon(2); return false;
+=======
+          case KEYCODE_ESC:
+          case KEYCODE_P:  pause = new gamePause(); return false;
+>>>>>>> 3a76ccaed9dcb9935d32aae9d092f2bec5f88c4c
         }
       }
 
@@ -773,37 +1015,10 @@
           case KEYCODE_W:
           case KEYCODE_UP:  fwdHeld = false; break;
           case KEYCODE_S:
-          case KEYCODE_DOWN:  bwdHeld = false; break;          
+          case KEYCODE_DOWN:  bwdHeld = false; break;       
+          case KEYCODE_ESC:
+          case KEYCODE_P:  pauseHeld = false; break;          
         }
-      }
-
-      //Класс зомби спаунера
-      //Передаем туда структуру с информацией о позиции, времени первого спауна, количестве спанов      
-      function zombieSpawner(data){
-        this.spawnDelay = data.properties.delay;
-        this.startTimeMs = data.properties.startTimeMs;
-        this.spawnNumber = data.properties.number;
-
-        this.nextSpawnTime = this.startTimeMs;
-
-        this.x = data.x;
-        this.y = data.y;
-
-        this.spawnHandler = function(event){
-          //console.log(event);
-          if(event.paused)return;
-          SZ.nextSpawnTime  -= event.delta;
-
-          if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
-            var z = new Zombie(SZ.x, SZ.y); 
-            gMap.zombies.push(z);
-            SZ.spawnNumber--;
-            SZ.nextSpawnTime = SZ.spawnDelay;
-          }
-        }
-
-        var SZ = this;
-        createjs.Ticker.addEventListener("tick", function(evt){SZ.spawnHandler(evt);});
       }
 
       //Класс многослойной карты из тайлов
@@ -821,6 +1036,9 @@
           //Zombies
           this.zombies = [];
           this.playerSpawn = null;
+
+          //Array of bonus objects
+          this.bonuses = [];          
 
           // tilesets stores each individual tileset
           // from the map.json's 'tilesets' Array.
@@ -867,24 +1085,42 @@
           };
 
           this.position = {x: 0, y: 0, w:0, h:0};
-
-          this.load = function (mapName) {      
-              //Clear all resources
+          this.reset = function(){
+              //Clear all resources              
+              createjs.Ticker.removeAllEventListeners("tick");
               stage.removeAllChildren();
-              player = null;
-              stage.clear();
               this.currMapData = null;
               this.obstacles = [];
               this.zombSpawners = [];
               this.zombies = [];
               this.playerSpawn = null;
               this.tilesets = [];
-              this.tiles = [];
-
-              createjs.Ticker.removeAllEventListeners("tick");
+              this.tiles = [];   
               createjs.Ticker.addEventListener("tick", function(evt){
                 if(evt.paused)return;
                 stage.update();
+              });
+          }
+
+          this.load = function (mapName) {      
+              this.reset();
+              createjs.Ticker.setPaused(false);
+
+              stage.addEventListener("zombieKilled", function(){
+                var n = gMap.zombies.length - 1;//Количество зомбей
+                var zS = gMap.zombSpawners;
+                for(var i = 0, l = zS.length; i < l && n === 0; i++)
+                  n += zS[i].spawnNumber;
+                if(n === 0){
+                  gMap.reset();
+                  alert("You won!");
+                  var d = new drawMenu();
+                }
+              });
+              stage.addEventListener("playerDied", function(){
+                  gMap.reset();
+                  alert("You lost!");
+                  var d = new drawMenu();
               });
 
 
@@ -1109,7 +1345,7 @@
                     for (var i = data.length - 1; i >= 0; i--) {
 
                       if(data[i].type == "zombSpawn"){
-                        var spawner = new zombieSpawner(data[i]);
+                        var spawner = new ZombieSpawner(data[i]);
                         this.zombSpawners.push(spawner);
                         continue;
                       }
@@ -1121,16 +1357,17 @@
                       }
 
 
-                      //Not zombie, not 
-                      var bData = resources["bonusJSON"][data[i].type];//bonus parameters
+                      // //Not zombie, not 
+                      // var bData = resources["bonusJSON"][data[i].type];//bonus parameters
                       
-                      var b = new createjs.Bitmap(resources["bonus"]);
-                      b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
-                      b.x = data[i].x - bData.width/2;
-                      b.y = data[i].y - bData.height/2;
-                      this.tiles.push(b);
-                      stage.addChild(b);
-                      
+                      // var b = new createjs.Bitmap(resources["bonus"]);
+                      // b.sourceRect = new createjs.Rectangle(bData.x, bData.y, bData.width, bData.height);
+                      // b.x = data[i].x - bData.width/2;
+                      // b.y = data[i].y - bData.height/2;
+                      // this.tiles.push(b);
+                      // stage.addChild(b);
+
+                      var b = new Bonus(data[i].type, data[i]);
                     };
                   }
               }
@@ -1192,6 +1429,12 @@
               zSpawn[i].x += dx;
               zSpawn[i].y += dy;
             };
+            
+            var bonuses = this.bonuses;
+            for (i = bonuses.length - 1; i >= 0; i--) {
+              bonuses[i].animation.x += dx;
+              bonuses[i].animation.y += dy;
+            };            
 
 
             this.position.x +=dx;

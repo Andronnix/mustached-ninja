@@ -62,9 +62,5 @@
 	{
 		"name" : "omgLargeMap",
 		"src" : "data\\omgLargeMap.json"
-	},
-	{
-		"name" : "startMenu",
-		"src" : "data\\startMenu.json"
 	}
 ]

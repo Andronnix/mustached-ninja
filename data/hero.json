@@ -12,5 +12,31 @@
 		"count": 8          
 	},
 	"hitRadius": 12,
-	"maxHealthPoints": 100
+	"maxHealthPoints": 100,
+	"weapons":[
+		{
+			"name" : "gun",
+			"shootDelay": 14,
+			"damage": 6,
+			"damageDelta": 2,
+			"scatter": 0.1,
+			"ammo": -1
+		},
+		{
+			"name" : "machine",
+			"shootDelay": 5,
+			"damage": 4,
+			"damageDelta": 1.5,
+			"scatter": 0.35,
+			"ammo": 200
+		},
+		{
+			"name" : "rifle",
+			"shootDelay": 45,
+			"damage": 40,
+			"damageDelta": 5,
+			"scatter": 0,
+			"ammo": 20
+		}
+	]
 }

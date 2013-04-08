@@ -40,7 +40,7 @@
       var KEYCODE_P = 80, KEYCODE_ESC = 27;   
       var KEYCODE_M = 77;   
 
-      var LOAD_PARTS = 23;
+      var LOAD_PARTS = 25;
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
@@ -687,6 +687,7 @@
           if (closestDistObst > closestDist){
             var dmgDealt = player.weapon.damage + Math.round( - player.weapon.damageDelta /2 + Math.random()*player.weapon.damageDelta);
             gMap.zombies[closestZ].imHit(closestZ, dmgDealt);
+            createjs.Sound.play("hitIt", "none", 100);
           }else{
             hitPoints[0].x = gMap.obstacles[closestObst].hitPoints[0].x;
             hitPoints[0].y = gMap.obstacles[closestObst].hitPoints[0].y;
@@ -740,7 +741,10 @@
           this.healthPoints -= dmg;
           if(this.healthPoints > this.maxHealthPoints) this.healthPoints = this.maxHealthPoints;
           var color;
-          if(dmg >= 0) var t = new TextAnimation(this, "-" + dmg, "#e00");
+          if(dmg >= 0) {
+            var t = new TextAnimation(this, "-" + dmg, "#e00");
+              createjs.Sound.play("zBite");
+            }
           else var t = new TextAnimation(this, "+" + (-dmg), "#0c0");
 
           

@@ -83,12 +83,20 @@
     "name" : "uziShot",
     "src" : "sounds\\uzi.mp3"
   },
-   {
+  {
     "name" : "rifleShot",
     "src" : "sounds\\rifle.mp3"
   },
-   {
+  {
     "name" : "rifleRecharge",
     "src" : "sounds\\rifleRec.mp3"
-  }   
+  },
+  {
+    "name" : "hitIt",
+    "src" : "sounds\\gotcha.mp3"
+  },
+  {
+    "name" : "zBite",
+    "src" : "sounds\\bite.mp3"
+  }  
 ]

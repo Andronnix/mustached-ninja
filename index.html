@@ -15,23 +15,17 @@
 
 
     <script>
-      var WIDTH = 640;
-      var HEIGHT = 640;
+      var WIDTH = 640, HEIGHT = 640;
+      
+      //usefull keycodes
+      var KEYCODE_ENTER = 13;
+      var KEYCODE_SPACE = 32;
+      var KEYCODE_UP = 38, KEYCODE_LEFT = 37, KEYCODE_RIGHT = 39, KEYCODE_DOWN = 40; 
+      var KEYCODE_W = 87, KEYCODE_A = 65, KEYCODE_D = 68, KEYCODE_S = 83;
+      var KEYCODE_Q = 81, KEYCODE_E = 69;
+      var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
 
-      var KEYCODE_ENTER = 13;   //usefull keycode
-      var KEYCODE_SPACE = 32;   //usefull keycode
-      var KEYCODE_UP = 38;    //usefull keycode
-      var KEYCODE_LEFT = 37;    //usefull keycode
-      var KEYCODE_RIGHT = 39;   //usefull keycode
-      var KEYCODE_DOWN = 40; 
-      var KEYCODE_W = 87;     //usefull keycode
-      var KEYCODE_A = 65;     //usefull keycode
-      var KEYCODE_D = 68;     //usefull keycode
-      var KEYCODE_S = 83;     //usefull keycode
-      var KEYCODE_P = 80;
-      var KEYCODE_ESC = 27;
-
-      var LOAD_PARTS = 17;    //Don't ASK, i don't give a fuck why!
+      var LOAD_PARTS = 16;
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
@@ -151,6 +145,40 @@
         return dist;
       }
 
+      function TextAnimation(owner, text, color, timer){
+        this.timer = timer || 400;//animation ticks
+        this.owner = owner;
+        this.text = null;
+        var self = this;
+        this.animator = function(event){
+          this.timer -= event.delta;
+          if(this.timer < 0){
+
+            stage.removeChild(this.text);
+            var e = this.eL;
+            createjs.Ticker.removeEventListener("tick", e);
+            var tA = this.owner.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              if(tA[i] == this) tA.splice(i, 1);
+            return;
+          }
+          this.text.y -= 1;
+          this.text.alpha -= 0.009;
+        }
+        this.load = function(txt, color){
+          this.text = new createjs.Text(txt, "bold 14px Arial", color);
+          this.text.x = this.owner.animation.x;
+          this.text.y = this.owner.animation.y - this.owner.hitRadius;
+          this.eL = createjs.Ticker.addEventListener("tick", function(evt){self.animator(evt);});
+          this.owner.textAnimation.push(this);
+          stage.addChild(this.text);
+        }
+        this.move = function(dx,dy){
+          this.text.x += dx;
+          this.text.y += dy;
+        }
+        this.load(text, color);
+      }
 
       function TextAnimation(owner, text, color){
         this.timer = 400;//animation ticks
@@ -195,7 +223,8 @@
         this.attackDelay = 0;
 
         this.animation = null;
-        this.textAnimation = null;
+        this.textAnimation = [];
+
 
         this.hitRadius = 0;
         this.hitPoints = [];
@@ -210,7 +239,10 @@
           this.animation.x = x;
           this.animation.y = y;
           if(this.textAnimation != null){
-            this.textAnimation.move(x - x0, y - y0);
+            var dx = x - x0, dy = y - y0;
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
           }
 
           if(DEBUG){
@@ -237,7 +269,9 @@
           this.animation.x += dx;
           this.animation.y += dy;
           if(this.textAnimation != null){
-            this.textAnimation.move(dx, dy);
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
           }
 
           if(DEBUG){
@@ -327,7 +361,8 @@
         //Запускаем слежение за игроком
         var ZZ = this;
         this.HH = createjs.Ticker.addEventListener("tick", function(evt){
-          if(evt.paused) return;
+          if(evt.paused) 
+            return;
           ZZ.hunt();
         });
         
@@ -353,18 +388,21 @@
         x = x || 0;
         y = y || 0;
         this.speed = 3;
-        this.damage = 5;
+        this.weapon = null;
         this.healthPoints = 0;
         this.maxHealthPoints = 0;
-        this.shootDelay = 0;
         this.shootTicker = 0;
 
         this.animation = null;
         this.shotAnimation = null;
-        this.textAnimation = null;
+        this.textAnimation = [];
+
         this.hitRadius = 0;
         this.hitBox = null;
         this.healthBar = null;
+
+        this.weapons = [];
+        this.currentWeaponID = 0;
 
 
         //not safe teleport
@@ -379,7 +417,10 @@
           this.healthBar.x = x;
           this.healthBar.y = y;
           if(this.textAnimation != null){
-            this.textAnimation.move(x0 - x, y0 - y);
+            var dx = x - x0, dy = y - y0;
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
           }
 
           if(DEBUG){
@@ -407,7 +448,9 @@
           this.healthBar.x += dx;
           this.healthBar.y += dy;
           if(this.textAnimation != null){
-            this.textAnimation.move(dx, dy);
+            var tA = this.textAnimation;
+            for(var i = 0; i < tA.length; i++)
+              tA[i].move(dx, dy);
           }
 
           if(DEBUG){
@@ -431,8 +474,9 @@
           this.hitRadius = r.hitRadius;
           this.maxHealthPoints = r.maxHealthPoints;
           this.healthPoints = r.maxHealthPoints;
-          this.shootDelay = r.shootDelay;
+
           this.shootTicker = 0;
+          this.weapons = r.weapons;
 
           this.healthBar = new createjs.Shape();
           this.healthBar.graphics.f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10, this.maxHealthPoints, 5);
@@ -464,6 +508,22 @@
           stage.addChild(this.animation);
           stage.addChild(this.shotAnimation);
           createjs.Ticker.addEventListener("tick", this.handleTick);
+          this.changeWeapon(0);
+        }
+
+        this.nextWeapon = function(){
+          var n = (this.currentWeaponID + 1) % this.weapons.length;
+          this.changeWeapon(n);
+        }
+        this.prevWeapon = function(){
+          var n = (this.currentWeaponID - 1 + this.weapons.length) % this.weapons.length;
+          this.changeWeapon(n);
+        }
+        this.changeWeapon = function(n){
+          var w = this.weapons[n];
+          this.currentWeaponID = n;
+          this.weapon = w;
+          var t = new TextAnimation(this, w.name, "#000");
         }
 
         this.animate = function(arg){
@@ -474,10 +534,25 @@
           this.shotAnimation.gotoAndPlay(arg);    
         }
         this.shoot = function(x, y, angle){
-          var recharge = this.shootDelay;
+          var recharge = this.weapon.shootDelay;
     
           if (this.shootTicker > 0)return false; 
           else this.shootTicker = recharge;
+
+          var weapon = this.weapon;
+
+          if(weapon.ammo == 0){
+            var t = new TextAnimation(this, "Out of ammo", "#e00");
+            return false;
+          }
+
+          //-1 == infinite ammo
+          if(weapon.ammo != -1) {
+            weapon.ammo--;
+          }
+          var scatter = weapon.scatter;
+          angle += - scatter/2 + Math.random()*scatter;
+
           //(y1 – y2)x + (x2 – x1)y + (x1y2 – x2y1) = 0
           //var k = Math.tan(angle + Math.PI);
           /*var dx = x + 17*Math.cos(angle + 0.49);
@@ -606,7 +681,8 @@
             }
           }
           if (closestDistObst > closestDist){
-            gMap.zombies[closestZ].imHit(closestZ, player.damage);
+            var dmgDealt = player.weapon.damage + Math.round( - player.weapon.damageDelta /2 + Math.random()*player.weapon.damageDelta);
+            gMap.zombies[closestZ].imHit(closestZ, dmgDealt);
           }else{
             hitPoints[0].x = gMap.obstacles[closestObst].hitPoints[0].x;
             hitPoints[0].y = gMap.obstacles[closestObst].hitPoints[0].y;
@@ -628,7 +704,7 @@
           //не убирай коменты - вдруг еще пригодится=)
           //как минимум здесь расчет правильного угла для стрельбы...
           
-          var length = 80 + Math.random()*50;
+          var length = 50 + 2 * Math.random() * weapon.damage;
           var s = new createjs.Shape();
           var da = Math.atan2(stage.mouseY - dy, stage.mouseX - dx);
           var dr = 5 + Math.random()*10;
@@ -664,8 +740,9 @@
                                                     this.healthPoints, 5)
                                  .s("#f00").f(0).r( - this.maxHealthPoints/2, - this.hitRadius - 10,
                                                     this.maxHealthPoints, 5);
-          if(this.healthPoints <= 0)//умереть
-            alert('You lost!');
+          if(this.healthPoints <= 0){//умереть            
+            stage.dispatchEvent("playerDied");
+          }
         }
         
         this.handleTick = function(evt) {
@@ -701,13 +778,11 @@
               player.animate("run");
           }    
 
-          var x0 = player.animation.x;
-          var y0 = player.animation.y;
+          var x0 = player.animation.x, y0 = player.animation.y;
 
           player.move(v.x, v.y);
 
-          var x1 = player.animation.x;
-          var y1 = player.animation.y;          
+          var x1 = player.animation.x, y1 = player.animation.y;          
 
           var mapMove = {dx:0, dy:0};
           var mvC = 0.4; // Константа, поределяющая перемещение карты
@@ -770,7 +845,13 @@
             if(this.type == "medkit"){
               //Нанесем отрицательный урон, то же, что и вылечить
               player.hit(- this.value);
-            }             
+            }
+            if(this.type == "ammo"){
+              //50 патронов для автомата и 10 для снайперки, пистолет с бесконечными
+              player.weapons[1].ammo += 50;
+              player.weapons[2].ammo += 10;
+              var t = TextAnimation(player, "Ammo", "#0e0");
+            }   
             //Удаляем себя, бонус использован
             stage.removeChild(this.animation);
             var bs = gMap.bonuses;
@@ -790,7 +871,6 @@
           if(evt.paused) return;
           self.touchCheck();
         });
-
       }
 
       //Класс зомби спаунера
@@ -888,7 +968,6 @@
       }
       
       //Создаем канвас, грузим карту, игрока, зомбей, запускаем
-
       function init() {
 
         var canvas = document.createElement("canvas");
@@ -901,6 +980,12 @@
         createjs.Ticker.setFPS(60);
         createjs.Ticker.addEventListener("tick", function(evt){
           stage.update();
+        });
+        stage.addEventListener("stagemousedown", function(){
+          shootHeld = true;
+        });
+        stage.addEventListener("stagemouseup", function(){
+          shootHeld = false;
         });
 
         //startMenu();
@@ -922,6 +1007,11 @@
           case KEYCODE_DOWN:  bwdHeld = true; return false;
           case KEYCODE_ESC:
           case KEYCODE_P:  pause = new gamePause(); return false;
+          case KEYCODE_Q: player.prevWeapon(); return false;
+          case KEYCODE_E: player.nextWeapon(); return false;
+          case KEYCODE_1: player.changeWeapon(0); return false;
+          case KEYCODE_2: player.changeWeapon(1); return false;
+          case KEYCODE_3: player.changeWeapon(2); return false;
         }
       }
 
@@ -942,7 +1032,6 @@
           case KEYCODE_P:  pauseHeld = false; break;          
         }
       }
-
 
       //Класс многослойной карты из тайлов
       var TILEDMap = function(){
@@ -1008,38 +1097,43 @@
           };
 
           this.position = {x: 0, y: 0, w:0, h:0};
-
-          this.load = function (mapName) {      
-              //Clear all resources
+          this.reset = function(){
+              //Clear all resources              
+              createjs.Ticker.removeAllEventListeners("tick");
               stage.removeAllChildren();
-              player = null;
-              stage.clear();
               this.currMapData = null;
               this.obstacles = [];
               this.zombSpawners = [];
               this.zombies = [];
               this.playerSpawn = null;
               this.tilesets = [];
-              this.tiles = [];
-
-              createjs.Ticker.removeAllEventListeners("tick");
+              this.tiles = [];   
               createjs.Ticker.addEventListener("tick", function(evt){
                 if(evt.paused)return;
                 stage.update();
               });
+          }
+
+          this.load = function (mapName) {      
+              this.reset();
+              createjs.Ticker.setPaused(false);
+
               stage.addEventListener("zombieKilled", function(){
                 var n = gMap.zombies.length - 1;//Количество зомбей
                 var zS = gMap.zombSpawners;
                 for(var i = 0, l = zS.length; i < l && n === 0; i++)
                   n += zS[i].spawnNumber;
                 if(n === 0){
-                  //createjs.Ticker.setPaused(true);
-                  alert("You won");
+                  gMap.reset();
+                  alert("You won!");
+                  var d = new drawMenu();
                 }
               });
-
-
-
+              stage.addEventListener("playerDied", function(){
+                  gMap.reset();
+                  alert("You lost!");
+                  var d = new drawMenu();
+              });
 
               this.currMapData = resources[mapName];
 

@@ -24,6 +24,7 @@
       var KEYCODE_W = 87, KEYCODE_A = 65, KEYCODE_D = 68, KEYCODE_S = 83;
       var KEYCODE_Q = 81, KEYCODE_E = 69;
       var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
+      var KEYCODE_P = 80, KEYCODE_ESC = 27;      
 
       var LOAD_PARTS = 16;
       
@@ -171,37 +172,6 @@
           this.text.y = this.owner.animation.y - this.owner.hitRadius;
           this.eL = createjs.Ticker.addEventListener("tick", function(evt){self.animator(evt);});
           this.owner.textAnimation.push(this);
-          stage.addChild(this.text);
-        }
-        this.move = function(dx,dy){
-          this.text.x += dx;
-          this.text.y += dy;
-        }
-        this.load(text, color);
-      }
-
-      function TextAnimation(owner, text, color){
-        this.timer = 400;//animation ticks
-        this.owner = owner;
-        this.text = null;
-        var self = this;
-        this.animator = function(event){
-          this.timer -= event.delta;
-          if(this.timer < 0){
-            stage.removeChild(this.text);
-            stage.removeEventListener("tick", this.eL);
-            this.owner.textAnimation = null;
-            return;
-          }
-          this.text.y -= 1;
-          this.text.alpha -= 0.009;
-        }
-        this.load = function(txt, color){
-          this.text = new createjs.Text(txt, "bold 14px Arial", color);
-          this.text.x = this.owner.animation.x;
-          this.text.y = this.owner.animation.y - this.owner.hitRadius;
-          this.eL = createjs.Ticker.addEventListener("tick", function(evt){self.animator(evt);});
-          this.owner.textAnimation = this;
           stage.addChild(this.text);
         }
         this.move = function(dx,dy){
@@ -1126,13 +1096,13 @@
                 if(n === 0){
                   gMap.reset();
                   alert("You won!");
-                  var d = new drawMenu();
+                  var d = new drawMenu(true);
                 }
               });
               stage.addEventListener("playerDied", function(){
                   gMap.reset();
                   alert("You lost!");
-                  var d = new drawMenu();
+                  var d = new drawMenu(true);
               });
 
               this.currMapData = resources[mapName];

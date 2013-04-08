@@ -66,5 +66,13 @@
 	{
 		"name" : "omgLargeMap",
 		"src" : "data\\omgLargeMap.json"
-	}
+	},
+  {
+    "name" : "mainTheme",
+    "src" : "sounds\\soundtrack.mp3"
+  },
+  {
+    "name" : "fightTheme",
+    "src" : "sounds\\fight.mp3"
+  }  
 ]

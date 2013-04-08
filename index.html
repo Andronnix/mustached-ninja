@@ -440,6 +440,20 @@
         }
 
         this.loadJSON = function(data){
+          function deepClone(arr){
+            if(!(arr instanceof Array)) return null;
+            var result = [];
+            for(var i = 0; i < arr.length; i++){
+              var w = {};
+              for(var key in arr[i]){
+                w[key] = arr[i][key];
+              }
+              result.push(w);
+            }
+            return result;
+          }
+
+
           var r = resources["heroJSON"];
           r.images = [resources["hero"]];
           this.hitRadius = r.hitRadius;
@@ -447,7 +461,8 @@
           this.healthPoints = r.maxHealthPoints;
 
           this.shootTicker = 0;
-          this.weapons = r.weapons;
+          this.weapons = deepClone(r.weapons);
+          console.log(r.weapons == this.weapons);
 
           this.healthBar = new createjs.Shape();
           this.healthBar.graphics.f("#f00").r( - this.maxHealthPoints/2, - this.hitRadius - 10, this.maxHealthPoints, 5);
@@ -1330,8 +1345,9 @@
                         continue;
                       }
 
-                      if(data[i].type == "playerSpawn"){
+                      if(data[i].type == "playerSpawn"){ 
                         player = new Player(data[i].x, data[i].y); 
+                        console.log(player);
                         this.zombies.push(player);//Добавим игрока в массив зомбей, чтобы легко проверять на столкновения
                         continue;
                       }

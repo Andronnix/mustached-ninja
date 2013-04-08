@@ -22,7 +22,7 @@
                  "properties":
                     {
                      "delay":"500",
-                     "number":"7",
+                     "number":"12",
                      "startTimeMs":"9000"
                     },
                  "type":"zombSpawn",
@@ -38,7 +38,7 @@
                  "properties":
                     {
                      "delay":"800",
-                     "number":"5",
+                     "number":"8",
                      "startTimeMs":"2000"
                     },
                  "type":"zombSpawn",
@@ -54,7 +54,7 @@
                  "properties":
                     {
                      "delay":"500",
-                     "number":"5",
+                     "number":"10",
                      "startTimeMs":"5000"
                     },
                  "type":"zombSpawn",
@@ -86,7 +86,7 @@
                  "properties":
                     {
                      "delay":"500",
-                     "number":"5",
+                     "number":"9",
                      "startTimeMs":"5000"
                     },
                  "type":"zombSpawn",
@@ -102,7 +102,7 @@
                  "properties":
                     {
                      "delay":"500",
-                     "number":"6",
+                     "number":"8",
                      "startTimeMs":"1000"
                     },
                  "type":"zombSpawn",
@@ -110,6 +110,22 @@
                  "width":0,
                  "x":704,
                  "y":640
+                }, 
+                {
+                 "ellipse":true,
+                 "height":0,
+                 "name":"p6",
+                 "properties":
+                    {
+                     "delay":"1000",
+                     "number":"10",
+                     "startTimeMs":"6000"
+                    },
+                 "type":"zombSpawn",
+                 "visible":true,
+                 "width":0,
+                 "x":545,
+                 "y":320
                 }],
          "opacity":1,
          "type":"objectgroup",
@@ -122,20 +138,6 @@
          "height":50,
          "name":"PickupObjects",
          "objects":[
-                {
-                 "ellipse":true,
-                 "height":0,
-                 "name":"m1",
-                 "properties":
-                    {
-
-                    },
-                 "type":"medkit",
-                 "visible":true,
-                 "width":0,
-                 "x":544,
-                 "y":64
-                }, 
                 {
                  "ellipse":true,
                  "height":0,
@@ -153,20 +155,6 @@
                 {
                  "ellipse":true,
                  "height":0,
-                 "name":"m3",
-                 "properties":
-                    {
-
-                    },
-                 "type":"medkit",
-                 "visible":true,
-                 "width":0,
-                 "x":64,
-                 "y":544
-                }, 
-                {
-                 "ellipse":true,
-                 "height":0,
                  "name":"a1",
                  "properties":
                     {
@@ -175,8 +163,8 @@
                  "type":"ammo",
                  "visible":true,
                  "width":0,
-                 "x":352,
-                 "y":480
+                 "x":63,
+                 "y":547
                 }, 
                 {
                  "ellipse":true,

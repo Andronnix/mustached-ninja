@@ -2,8 +2,19 @@
 <HTML>
   <HEAD>
     <style type="text/css">
-      canvas {
+      #gameCanvas {
         border: 1px solid black;
+        position: absolute;
+        top: 10px;
+        left: 10px;
+      }
+      #instructions{
+        position: absolute;
+        top: 10px;
+        left: 700px;
+      }
+      #instructions li{
+        list-style-type: square;
       }
     </style>
   </HEAD>
@@ -26,7 +37,8 @@
       var KEYCODE_W = 87, KEYCODE_A = 65, KEYCODE_D = 68, KEYCODE_S = 83;
       var KEYCODE_Q = 81, KEYCODE_E = 69;
       var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
-      var KEYCODE_P = 80, KEYCODE_ESC = 27;      
+      var KEYCODE_P = 80, KEYCODE_ESC = 27;   
+      var KEYCODE_M = 77;   
 
       var LOAD_PARTS = 23;
       
@@ -35,6 +47,7 @@
       var DEBUG = false; 
       
       var paused = false;
+      var muted = false;
 
       var lfHeld;       //is the user holding a turn left command
       var rtHeld;       //is the user holding a turn right command
@@ -712,7 +725,7 @@
               t = 0;
               stage.removeChild(s);
             }else t++;          
-          });//*/
+          });//
           switch (weapon.name){
             case "gun" : createjs.Sound.play("pistolShot"); break;
             case "machine" : createjs.Sound.play("uziShot"); break;
@@ -1006,9 +1019,17 @@
           case KEYCODE_P:  pause = new gamePause(); return false;
           case KEYCODE_Q: player.prevWeapon(); return false;
           case KEYCODE_E: player.nextWeapon(); return false;
+
           case KEYCODE_1: player.changeWeapon(0); return false;
           case KEYCODE_2: player.changeWeapon(1); return false;
           case KEYCODE_3: player.changeWeapon(2); return false;
+
+          case KEYCODE_M: if(!muted){
+                            createjs.Sound.setVolume(0);
+                          }else{
+                            createjs.Sound.setVolume(1);
+                          }; muted =! muted;
+
         }
       }
 
@@ -1455,5 +1476,38 @@
           }
       };
     </script>  
+
+    <div id="instructions">
+      <h3>Instructions</h3>
+      You are alone in this city. Masses of zombies are coming! Kill'em all, or die!<br>
+      Don't stay, collect bonuses and shot!
+      Enjoy!
+
+
+      <h3>Hot keys:</h3>      
+      <ul>
+        <li> WASD to move</li>
+        <br />
+        <li> 1 - pistol</li>
+        <li> 2 - machine gun</li>
+        <li> 3 - sniper riffle </li>
+        <br />
+        <li> Q - previous weapon</li>
+        <li> E - next weapon</li>
+        <br />
+        <li> M - mute </li>
+        <li> Esc, P - pause </li>
+      </ul>
+
+
+      <h3>Autors:</h3>
+        <b>Code:</b> Andrey Kokorev, Paul Chursin <br>
+        <b>Background music:</b> Paul Chursin <br>
+        <b>Animation and art:</b> Andrey Kokorev<br>
+        There are a github repository for this game: <a href="https://github.com/Andronnix/mustached-ninja">https://github.com/Andronnix/mustached-ninja</a>
+        <br>
+        You can find us here on github: <a href="https://github.com/blOOdmOnstEr"> Chursin Pavel (blOOdmOnstEr)</a>, <a href="https://github.com/Andronnix"> Andrey Kokorev (Andronnix)</a> 
+    </div>
+
   </BODY>
 </HTML>

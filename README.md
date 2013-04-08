@@ -1,31 +1,31 @@
 mustached-ninja
 ===============
-Epic HTML 5 game!
+Instructions
 
-EeaselJS http://www.createjs.com/#!/EaselJS 
+You are alone in this city. Masses of zombies are coming! Kill'em all, or die!
+Don't stay, collect bonuses and shoot! Enjoy!
+Hot keys:
 
-Tiled Map Editor http://www.mapeditor.org/ 
+WASD to move
 
-Pyxel Edit http://pyxeledit.com/beta.php 
+1 - pistol
+2 - machine gun
+3 - sniper riffle
 
-Texture Packer http://www.codeandweb.com/texturepacker 
+Q - previous weapon
+E - next weapon
 
-Zoё (преобразование swf в анимацию для EaselJS) http://www.createjs.com/#!/Zoe 
+M - mute
+Esc, P - pause
+Autors:
+
+Code: Andrey Kokorev, Paul Chursin 
+Background music: Paul Chursin 
+Animation and art: Andrey Kokorev
+There are a github repository for this game: https://github.com/Andronnix/mustached-ninja 
+You can find us here on github: Chursin Pavel (blOOdmOnstEr), Andrey Kokorev (Andronnix)
 
 
- - [ ] Загрузка карты
-	 - [ ] Разработать формат хранения карты
-	 - [ ] Написать загрузчик карты из списка
- - [ ] Графика и звук
-	 - [ ] Обдумать общий стиль
-	 - [ ] Анимашки персонажей
-	 - [ ] Декорации
-	 - [ ] Звуки выстрелов, зомби, фоновая музыка
- - [ ] Наполнение игрового мира
-	 - [ ] Объекты (патроны, опыт, в общем все, что валяется)
-	 - [ ] Зомби, нечисть всякая, возможно турельки(?)
-	 - [ ] Людишки
-	 - [ ] Ландшафт, собственно сами карты
-	 - [ ] Миссии, цели
- - [ ] Интеллект для зомбей
 
+mustaged-ninja by Andrey Kokorev and Pavel Chursin is licensed under a Creative Commons Attribution-NonCommercial-ShareAlike 3.0 Unported License.
+Permissions beyond the scope of this license may be available at https://github.com/Andronnix.

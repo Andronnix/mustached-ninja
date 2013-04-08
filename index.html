@@ -12,6 +12,8 @@
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
     <script src="lib\\TS_vector2.js"></script>
     <script src="lib\\loadScreen.js"></script>
+    <script src="lib\\soundjs-0.4.0.min.js"></script>
+    
 
 
     <script>
@@ -26,7 +28,7 @@
       var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
       var KEYCODE_P = 80, KEYCODE_ESC = 27;      
 
-      var LOAD_PARTS = 17;
+      var LOAD_PARTS = 23;
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
@@ -711,6 +713,11 @@
               stage.removeChild(s);
             }else t++;          
           });//*/
+          switch (weapon.name){
+            case "gun" : createjs.Sound.play("pistolShot"); break;
+            case "machine" : createjs.Sound.play("uziShot"); break;
+            case "rifle" : createjs.Sound.play("rifleShot"); createjs.Sound.play("rifleRecharge", "none", weapon.shootDelay*1000/60 - 800); break;
+          }
           return true;
         }
 
@@ -924,6 +931,7 @@
         var preLoads;
 
         var objQueue = new createjs.LoadQueue();
+        objQueue.installPlugin(createjs.Sound);
         //loadScreen add
         init();
               
@@ -1118,6 +1126,7 @@
                 if(n === 0){
                   gMap.reset();
                   alert("You won!");
+                  changeMusic("mainTheme", 21500, -1);
                   var d = new drawMenu(true);
                 }
               });
@@ -1125,6 +1134,7 @@
               stage.addEventListener("playerDied", function(){
                   gMap.reset();
                   alert("You lost!");
+                  changeMusic("mainTheme", 21500, -1);
                   var d = new drawMenu(true);
               });              
 

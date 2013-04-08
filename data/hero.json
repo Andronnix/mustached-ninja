@@ -16,7 +16,7 @@
 	"weapons":[
 		{
 			"name" : "gun",
-			"shootDelay": 14,
+			"shootDelay": 18,
 			"damage": 6,
 			"damageDelta": 2,
 			"scatter": 0.1,
@@ -24,7 +24,7 @@
 		},
 		{
 			"name" : "machine",
-			"shootDelay": 5,
+			"shootDelay": 8,
 			"damage": 4,
 			"damageDelta": 1.5,
 			"scatter": 0.35,
@@ -32,7 +32,7 @@
 		},
 		{
 			"name" : "rifle",
-			"shootDelay": 45,
+			"shootDelay": 58,
 			"damage": 40,
 			"damageDelta": 5,
 			"scatter": 0,

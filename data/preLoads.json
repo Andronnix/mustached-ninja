@@ -58,6 +58,10 @@
 	{
 		"name" : "testMap5",
 		"src" : "data\\testMap5.json"
+	},
+	{
+		"name" : "testMap6",
+		"src" : "data\\testMap6.json"
 	},		
 	{
 		"name" : "omgLargeMap",

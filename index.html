@@ -536,6 +536,9 @@
           if(weapon.ammo != -1) {
             weapon.ammo--;
           }
+          if(weapon.ammo != -1){
+            var t = new TextAnimation(this, weapon.ammo, "#000", 200);
+          }
           var scatter = weapon.scatter;
           angle += - scatter/2 + Math.random()*scatter;
 
@@ -1086,6 +1089,8 @@
           this.reset = function(){
               //Clear all resources              
               createjs.Ticker.removeAllEventListeners("tick");
+              stage.removeAllEventListeners("zombieKilled");
+              stage.removeAllEventListeners("playerDied");
               stage.removeAllChildren();
               this.currMapData = null;
               this.obstacles = [];
@@ -1098,6 +1103,7 @@
                 if(evt.paused)return;
                 stage.update();
               });
+              lfHeld = rtHeld = fwdHeld = bwdHeld = shootHeld = pauseHeld = false;
           }
 
           this.load = function (mapName) {      
@@ -1115,11 +1121,12 @@
                   var d = new drawMenu(true);
                 }
               });
+
               stage.addEventListener("playerDied", function(){
                   gMap.reset();
                   alert("You lost!");
                   var d = new drawMenu(true);
-              });
+              });              
 
               this.currMapData = resources[mapName];
 

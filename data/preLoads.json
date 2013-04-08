@@ -74,5 +74,21 @@
   {
     "name" : "fightTheme",
     "src" : "sounds\\fight.mp3"
-  }  
+  },
+  {
+    "name" : "pistolShot",
+    "src" : "sounds\\pistol.wav"
+  },
+  {
+    "name" : "uziShot",
+    "src" : "sounds\\uzi.mp3"
+  },
+   {
+    "name" : "rifleShot",
+    "src" : "sounds\\rifle.mp3"
+  },
+   {
+    "name" : "rifleRecharge",
+    "src" : "sounds\\rifleRec.mp3"
+  }   
 ]

@@ -28,7 +28,7 @@
       var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
       var KEYCODE_P = 80, KEYCODE_ESC = 27;      
 
-      var LOAD_PARTS = 19;
+      var LOAD_PARTS = 23;
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
@@ -695,6 +695,11 @@
               stage.removeChild(s);
             }else t++;          
           });//*/
+          switch (weapon.name){
+            case "gun" : createjs.Sound.play("pistolShot"); break;
+            case "machine" : createjs.Sound.play("uziShot"); break;
+            case "rifle" : createjs.Sound.play("rifleShot"); createjs.Sound.play("rifleRecharge", "none", weapon.shootDelay*1000/60 - 800); break;
+          }
           return true;
         }
 

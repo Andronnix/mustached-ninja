@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<HTML>
+<HTML lang="en" manifest="loads.manifest">
   <HEAD>
     <style type="text/css">
       #gameCanvas {
@@ -17,14 +17,13 @@
         list-style-type: square;
       }
     </style>
-    <meta http-equiv="expires" content="0">
   </HEAD>
   <BODY id="body" onload="load();">  
-    <script src="lib\\easeljs-0.6.0.min.js"></script>
-    <script src="lib\\preloadjs-0.3.0.min.js"></script>
-    <script src="lib\\TS_vector2.js"></script>
-    <script src="lib\\loadScreen.js"></script>
-    <script src="lib\\soundjs-0.4.0.min.js"></script>
+    <script src="lib\easeljs-0.6.0.min.js"></script>
+    <script src="lib\preloadjs-0.3.0.min.js"></script>
+    <script src="lib\TS_vector2.js"></script>
+    <script src="lib\loadScreen.js"></script>
+    <script src="lib\soundjs-0.4.0.min.js"></script>
     
 
 
@@ -955,7 +954,7 @@
         tempBar.drawBackBar(WIDTH/4, HEIGHT/2, WIDTH/2, 20)
 
         objQueue.addEventListener("progress", function(){
-        console.log(objQueue.progress);
+        //console.log(objQueue.progress);
         tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*objQueue.progress, 20, Math.floor(100*objQueue.progress));          
         })
           

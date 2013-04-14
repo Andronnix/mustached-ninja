@@ -283,15 +283,19 @@
         }
 
         this.loadJSON = function(type){   
-          runner = (type == "runner");
           var r;
-          if(!runner) {
-            r = resources["zombieJSON"];
-            r.images = [resources["zombie"]];
-          }else{
-            r = resources["zombie_runnerJSON"];            
-            r.images = [resources["zombie_runner"]];
+          switch(type){
+            case "runner": r = resources["zombie_runnerJSON"];            
+                           r.images = [resources["zombie_runner"]];
+                           break;
+            case "tank": r = resources["zombie_tankJSON"];            
+                           r.images = [resources["zombie_tank"]];
+                           break;
+            default: r = resources["zombieJSON"];
+                           r.images = [resources["zombie"]];
+                           break;                           
           }
+
 
           
         
@@ -1042,7 +1046,9 @@
           SZ.nextSpawnTime  -= event.delta;
 
           if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
-            var zType = (Math.random() > 0.7)? "runner" : "normal"; //30% chance to create zombie-runner
+            var typeR = Math.random();
+            //30% chance to create zombie-runner, 5% chance to create tank
+            var zType = (typeR >= 0.75)? ((typeR >= 0.95)?"tank":"runner") : "normal"; 
             var z = new Zombie(SZ.x, SZ.y, zType); 
             gMap.zombies.push(z);
             SZ.spawnNumber--;

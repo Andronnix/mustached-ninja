@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <HTML>
   <HEAD>
+    <META http-equiv="expires" content="0">
     <style type="text/css">
       #gameCanvas {
         border: 1px solid black;
@@ -23,9 +24,7 @@
     <script src="lib\\preloadjs-0.3.0.min.js"></script>
     <script src="lib\\TS_vector2.js"></script>
     <script src="lib\\loadScreen.js"></script>
-    <script src="lib\\soundjs-0.4.0.min.js"></script>
-    
-
+    <script src="lib\\soundjs-0.4.0.min.js"></script>  
 
     <script>
       var WIDTH = 640, HEIGHT = 640;
@@ -197,9 +196,10 @@
       }
 
       //Класс зомби
-      function Zombie(x, y){
+      function Zombie(x, y, type){
         x = x || 0;
         y = y || 0;
+        type = type || "normal";
         this.speed = 1.5;
         this.healthPoints = 0;
         this.maxHealthPoints = 0;
@@ -279,10 +279,19 @@
           this.animation.rotation = alpha;
         }
 
-        this.loadJSON = function(data){
-          var r = resources["zombieJSON"];
-          r.images = [resources["zombie"]];
+        this.loadJSON = function(type){   
+          runner = (type == "runner");
+          var r;
+          if(!runner) {
+            r = resources["zombieJSON"];
+            r.images = [resources["zombie"]];
+          }else{
+            r = resources["zombie_runnerJSON"];            
+            r.images = [resources["zombie_runner"]];
+          }
 
+          
+        
           this.hitRadius = r.hitRadius;
           this.maxHealthPoints = r.maxHealthPoints;
           this.healthPoints = r.maxHealthPoints;
@@ -310,27 +319,77 @@
           this.animation.gotoAndPlay(arg);    
         }
         this.hunt = function() {
-          //Just follow to the player
-          var a = Math.atan2(this.animation.y - player.animation.y, this.animation.x - player.animation.x) + Math.PI;
+          //return distance between point p and nearest corner of rect r
+          function getDistance(p, r){
+            var pr = [{x: r.x1, y: r.y1},
+                      {x: r.x2, y: r.y1},
+                      {x: r.x2, y: r.y2},
+                      {x: r.x1, y: r.y2}
+                    ];
+            var dist = WIDTH * HEIGHT;//LARGE number
+            var w = 0;
+            for(var i = 0; i < pr.length; i++) {
+              w = (pr[i].x - p.x)*(pr[i].x - p.x) + (pr[i].y - p.y)*(pr[i].y - p.y); 
+              if( w < dist) dist = w;
+            }
+            return Math.sqrt(dist);
+          };
+          
+          var pos = {x: this.animation.x, y: this.animation.y};
+          var r = {x: this.animation.x - this.hitRadius, y: this.animation.y - this.hitRadius, w: 2*this.hitRadius, h:2*this.hitRadius};
+          var r1 = null;
+          var distToPlayer = getDistance(pos, r);
+          var obst = gMap.obstacles;
 
-          this.animation.rotation = 180 * a / Math.PI + 90;
+          var isPlayerVisible = false;
+/*
+          for (var i = 0; i < obst.length; i++) {
+            r1 = {x1: obst[i].x, y1: obst[i].y, x2: obst[i].x + obst[i].width, y2: obst[i].y + obst[i].height};
+            if (getDistance(pos, r1) < distToPlayer) {
+              // Player is not visible
+              isPlayerVisible = false;
+              break;
+            }
+          }*/
 
-          var v = {x: 0, y: 0};
-          v.x = this.speed * Math.cos(a); 
-          v.y = this.speed * Math.sin(a);
-          var x0 = this.animation.x;
-          var y0 = this.animation.y;
-          this.move(v.x, v.y);
 
-          var r = {x1: this.animation.x - this.hitRadius, y1: this.animation.y - this.hitRadius,
-                   x2: this.animation.x + this.hitRadius, y2: this.animation.y + this.hitRadius};
+          var dist = minDistance(r);//{up:WIDTH, down:WIDTH, left:WIDTH, right:WIDTH};
+
+          if(isPlayerVisible){
+            //Just follow to the player
+            var a = Math.atan2(this.animation.y - player.animation.y, this.animation.x - player.animation.x) + Math.PI;
+
+            this.animation.rotation = 180 * a / Math.PI + 90;
+
+            var v = {x: 0, y: 0};
+            v.x = this.speed * Math.cos(a); 
+            v.y = this.speed * Math.sin(a);
+            var x0 = this.animation.x;
+            var y0 = this.animation.y;
+            this.move(v.x, v.y);
+          }else{
+            var VH = HEIGHT * WIDTH;
+            var v = {x: 0, y: 0};
+            var m = 0;
+            var mk = "up";
+            for(var key in dist){
+              if (dist[key] > m){
+                m = dist[key];
+                mk = key;
+              } 
+            }
+            switch(mk){
+              case "up": v.y = -this.speed; break;
+              case "down": v.y = this.speed; break;
+              case "left": v.x = -this.speed; break;
+              case "right": v.x = this.speed; break;
+            }
+            this.move(v.x, v.y);
+          }          
 
           var pr = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
-                   x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};
-
-          var dist = {up:1, down:1, left:1, right:1}; //Все что угодно, кроме нуля
+                     x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};          
           getDistance(r, pr, dist);
-
           if(dist.up + dist.down + dist.left + dist.right < 4){//Касаемся игрока
             if(this.attackTicker <= 0){
               player.hit(this.damage);
@@ -342,7 +401,7 @@
         }
 
         //загружаем, отрисовываем зомбя
-        this.loadJSON();
+        this.loadJSON(type);
 
         //Запускаем слежение за игроком
         var ZZ = this;
@@ -903,7 +962,8 @@
           SZ.nextSpawnTime  -= event.delta;
 
           if(SZ.spawnNumber > 0 && SZ.nextSpawnTime <= 0){
-            var z = new Zombie(SZ.x, SZ.y); 
+            var zType = (Math.random() > 0.7)? "runner" : "normal"; //30% chance to create zombie-runner
+            var z = new Zombie(SZ.x, SZ.y, zType); 
             gMap.zombies.push(z);
             SZ.spawnNumber--;
             SZ.nextSpawnTime = SZ.spawnDelay;            

@@ -8,12 +8,20 @@
 		"src" : "images\\zombie.png"
 	},
 	{
+		"name" : "zombie_runner",
+		"src" : "images\\zombie_runner.png"
+	},
+	{
 		"name" : "heroJSON",
 		"src" : "data\\hero.json"
 	},
 	{
 		"name" : "zombieJSON",
 		"src" : "data\\zombie.json"
+	},
+	{
+		"name" : "zombie_runnerJSON",
+		"src" : "data\\zombie_runner.json"
 	},
 	{
 		"name" : "city",

@@ -17,6 +17,7 @@
         list-style-type: square;
       }
     </style>
+    <meta http-equiv="expires" content="0">
   </HEAD>
   <BODY id="body" onload="load();">  
     <script src="lib\\easeljs-0.6.0.min.js"></script>
@@ -1029,9 +1030,9 @@
           case KEYCODE_3: player.changeWeapon(2); return false;
 
           case KEYCODE_M: if(!muted){
-                            createjs.Sound.setVolume(0);
+                            createjs.Sound.setMute(true);
                           }else{
-                            createjs.Sound.setVolume(1);
+                            createjs.Sound.setMute(false);
                           }; muted =! muted;
 
         }

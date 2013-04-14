@@ -77,7 +77,7 @@
   },
   {
     "name" : "pistolShot",
-    "src" : "sounds\\pistol.wav"
+    "src" : "sounds\\pistol.mp3"
   },
   {
     "name" : "uziShot",

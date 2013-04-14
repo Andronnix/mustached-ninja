@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<HTML>
+<HTML lang="en" manifest="loads.manifest">
   <HEAD>
     <style type="text/css">
       #gameCanvas {
@@ -19,11 +19,11 @@
     </style>
   </HEAD>
   <BODY id="body" onload="load();">  
-    <script src="lib\\easeljs-0.6.0.min.js"></script>
-    <script src="lib\\preloadjs-0.3.0.min.js"></script>
-    <script src="lib\\TS_vector2.js"></script>
-    <script src="lib\\loadScreen.js"></script>
-    <script src="lib\\soundjs-0.4.0.min.js"></script>  
+    <script src="lib\easeljs-0.6.0.min.js"></script>
+    <script src="lib\preloadjs-0.3.0.min.js"></script>
+    <script src="lib\TS_vector2.js"></script>
+    <script src="lib\loadScreen.js"></script>
+    <script src="lib\soundjs-0.4.0.min.js"></script>
 
     <script>
       var WIDTH = 640, HEIGHT = 640;
@@ -36,14 +36,14 @@
       var KEYCODE_Q = 81, KEYCODE_E = 69;
       var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
       var KEYCODE_P = 80, KEYCODE_ESC = 27;   
-      var KEYCODE_M = 77;   
-
-      var LOAD_PARTS = 25;
+      var KEYCODE_M = 77;
+      var KEYCODE_PLUS = 107, KEYCODE_MINUS = 109;
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
       var DEBUG = false; 
       
+      var maxVolume = 0.8;
       var paused = false;
       var muted = false;
 
@@ -1101,11 +1101,9 @@
         var tempBar = new loadBar();
         tempBar.drawBackBar(WIDTH/4, HEIGHT/2, WIDTH/2, 20)
 
-        var currParts = 0;
-        objQueue.addEventListener("fileload", function(){
-        currParts++;
-        tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
-         //console.log(currParts);
+        objQueue.addEventListener("progress", function(){
+        //console.log(objQueue.progress);
+        tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*objQueue.progress, 20, Math.floor(100*objQueue.progress));          
         })
           
         //end loadScreen
@@ -1113,7 +1111,7 @@
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
             }
-            CLMenu(WIDTH/2.5, HEIGHT/1.5, WIDTH/4, 50, tempBar); // CompleteLoadMenu
+            CLMenu(WIDTH*0.375, HEIGHT/1.5, WIDTH/4, 50, tempBar); // CompleteLoadMenu
         });        
         xhrGet("data\\preLoads.json", 
                 this, 
@@ -1147,7 +1145,6 @@
         stage.addEventListener("stagemouseup", function(){
           shootHeld = false;
         });
-
         //startMenu();
       }
       
@@ -1169,15 +1166,18 @@
           case KEYCODE_P:  pause = new gamePause(); return false;
           case KEYCODE_Q: player.prevWeapon(); return false;
           case KEYCODE_E: player.nextWeapon(); return false;
+          
+          case KEYCODE_PLUS: volumeUp(); return false;
+          case KEYCODE_MINUS: volumeDown(); return false;
 
           case KEYCODE_1: player.changeWeapon(0); return false;
           case KEYCODE_2: player.changeWeapon(1); return false;
           case KEYCODE_3: player.changeWeapon(2); return false;
 
           case KEYCODE_M: if(!muted){
-                            createjs.Sound.setVolume(0);
+                            createjs.Sound.setMute(true);
                           }else{
-                            createjs.Sound.setVolume(1);
+                            createjs.Sound.setMute(false);
                           }; muted =! muted;
 
         }
@@ -1271,6 +1271,8 @@
               stage.removeAllEventListeners("zombieKilled");
               stage.removeAllEventListeners("playerDied");
               stage.removeAllChildren();
+              volumeText.alpha = 0;
+              volumeText.isSeen = false;
               this.currMapData = null;
               this.obstacles = [];
               this.zombSpawners = [];

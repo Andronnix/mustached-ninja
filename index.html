@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <HTML>
   <HEAD>
-    <META http-equiv="expires" content="0">
     <style type="text/css">
       #gameCanvas {
         border: 1px solid black;
@@ -126,15 +125,17 @@
           }
         }
       }
-      //Возвращает расстояние до ближайших препятствий сверху, снизу, справа и слева
-      function minDistance(r){
+      //Возвращает расстояние до ближайших препятствий сверху, снизу, справа и слева в области видимости
+      //Если в области видимости с какой-то стороны препятствий нет, возвращает радиус области видиости +1
+      function minDistance(r, sightRadius){
+        sightRadius = sightRadius || WIDTH * HEIGHT;
         var EPS = 1e-4;
         var obst = gMap.obstacles; 
-        var zomb = gMap.zombies;   
+        var zomb = gMap.zombies;           
         var r0 = {x1: r.x, y1: r.y, x2: r.x + r.w, y2: r.y + r.h};
         var r1 = null;
         var i = 0;
-        var dist = {up:5*HEIGHT, down:5*HEIGHT, left:5*WIDTH, right:5*WIDTH};
+        var dist = {up:sightRadius + 1, right:sightRadius + 1, down:sightRadius + 1, left:sightRadius + 1};
 
         var ol = obst.length;
         for(i = ol - 1; i >= 0; i--){
@@ -144,7 +145,7 @@
 
         var zl = zomb.length;
 
-        for(i = zl - 1; i >= 0; i--){          
+        for(i = zl - 1; i >= 0; i--){
           r1 = {x1: zomb[i].animation.x - zomb[i].hitRadius, y1: zomb[i].animation.y - zomb[i].hitRadius,
                 x2: zomb[i].animation.x + zomb[i].hitRadius, y2: zomb[i].animation.y + zomb[i].hitRadius};
 
@@ -152,10 +153,10 @@
               Math.abs(r1.y1 - r0.y1) < EPS && Math.abs(r1.y2 - r0.y2) < EPS ){
             
             continue;//the same object
-        }
+          }
 
           getDistance(r0, r1, dist);
-        }    
+        }
 
         return dist;
       }
@@ -203,6 +204,8 @@
         this.speed = 1.5;
         this.healthPoints = 0;
         this.maxHealthPoints = 0;
+        this.sightRadius = 50;
+        this.lastDirection = "up";
 
         this.attackTicker = 0;        
         this.attackDelay = 0;
@@ -293,6 +296,7 @@
           
         
           this.hitRadius = r.hitRadius;
+          this.sightRadius = this.hitRadius;
           this.maxHealthPoints = r.maxHealthPoints;
           this.healthPoints = r.maxHealthPoints;
           this.damage = r.damage;
@@ -320,42 +324,123 @@
         }
         this.hunt = function() {
           //return distance between point p and nearest corner of rect r
-          function getDistance(p, r){
+          function isPlayerVisible(dx, dy){
+            var r = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
+                    x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};
             var pr = [{x: r.x1, y: r.y1},
                       {x: r.x2, y: r.y1},
                       {x: r.x2, y: r.y2},
                       {x: r.x1, y: r.y2}
                     ];
-            var dist = WIDTH * HEIGHT;//LARGE number
-            var w = 0;
-            for(var i = 0; i < pr.length; i++) {
-              w = (pr[i].x - p.x)*(pr[i].x - p.x) + (pr[i].y - p.y)*(pr[i].y - p.y); 
-              if( w < dist) dist = w;
+            var obst = gMap.obstacles;this
+            var kA = 0, kB = 0, kC = 0;
+            var zCheck = new Vec2(0,0), shotVect = new Vec2(0,0);
+            var playerCornerDist = 9000;
+            var closestDistObst = 9000;
+            var hitPoints = [];
+            var shotPoints = [];
+            for(var i = 0; i<2; i++){
+              hitPoints[i] = {x:0, y:0};
+              shotPoints[i] = {x:0, y:0};
             }
-            return Math.sqrt(dist);
+            function getDist(s,z){
+              //var tempS = new Vec2(0,0);
+              var cosAng = s.dot(z)/((s.length()*z.length()));
+              if (cosAng < 0)return 9001;
+              var sinAng = Math.sqrt(1-cosAng*cosAng);
+              return sinAng*z.length();
+            };
+            
+            function hitCheck(x, y, hitRadius){
+              var x1 = x - hitRadius;
+              var x2 = x + hitRadius;
+              var y1 = y - hitRadius;
+              var y2 = y + hitRadius;
+              var i = 0;
+              var y;
+              var x;
+              if (kB != 0){
+                y = ((kA*x1+kC)/(-kB));
+                if (y <= y2 && y >=y1){
+                  hitPoints[i].x = x1;
+                  hitPoints[i].y = y;
+                  i++;
+                }
+                y = ((kA*x2+kC)/(-kB));
+                if (y <= y2 && y >=y1){
+                  hitPoints[i].x = x2;
+                  hitPoints[i].y = y;
+                  i++;
+                }
+              }else{
+                if (dx <= x2 && dx >= x1){
+                  for(i = 0; i<2; i++)hitPoints[i].x = dx
+                    hitPoints[0].y = y1;
+                    hitPoints[1].y = y2;
+                }
+              }
+              if (kA != 0 && i < 2){
+                x = ((kB*y1+kC)/(-kA));
+                if (x <= x2 && x >=x1){
+                  hitPoints[i].x = x;
+                  hitPoints[i].y = y1;
+                  i++;
+                }
+                if (i < 2){
+                  x = ((kB*y2+kC)/(-kA));            
+                  if (x <= x2 && x >=x1){
+                    hitPoints[i].x = x;
+                    hitPoints[i].y = y2;
+                    i++;
+                  }
+                }
+              }else{
+                if (i == 0 && dx <= x2 && dx >= x1){
+                  for(i = 0; i<2; i++)hitPoints[i].y = dy
+                    hitPoints[0].x = x1;
+                    hitPoints[1].x = x2;
+                }
+              }
+              if (i == 2){
+                var v1 = new Vec2(hitPoints[0].x - dx, hitPoints[0].y - dy);
+                var v2 = new Vec2(hitPoints[1].x - dx, hitPoints[1].y - dy);
+                if (v1.length()>v2.length()){
+                  var temp = hitPoints[0];
+                  hitPoints[0] = hitPoints[1];
+                  hitPoints[1] = temp;
+                }
+                return true;
+              } else return false;
+            };
+
+            for(var i = 0; i < pr.length; i++) {//если хотя бы один из углов виден, то вернем true
+              kA = dy - pr[i].y;
+              kB = pr[i].x - dx;
+              kC = dx * pr[i].y - pr[i].x * dy;      
+              shotVect = new Vec2(kB, -kA);
+              playerCornerDist = Math.sqrt((pr[i].x - dx)*(pr[i].x - dx) + (pr[i].y - dy)*(pr[i].y - dy));
+              //стены стены!
+              for (var j = 0; j < obst.length; j++){
+                zCheck.x = obst[j].x - dx + obst[j].width/2;
+                zCheck.y = obst[j].y - dy + obst[j].height/2;
+                if (getDist(shotVect, zCheck)<20 && hitCheck(obst[j].x + obst[j].width/2, obst[j].y + obst[j].height/2, 22)) //ааа говнокод, нужна переменная!!!
+                {
+                  if (zCheck.length() < closestDistObst){
+                    closestDistObst = zCheck.length();
+                  }
+                }
+              }
+              if (closestDistObst > playerCornerDist){
+                return true;
+              }
+            }
+            return false;
           };
-          
-          var pos = {x: this.animation.x, y: this.animation.y};
-          var r = {x: this.animation.x - this.hitRadius, y: this.animation.y - this.hitRadius, w: 2*this.hitRadius, h:2*this.hitRadius};
-          var r1 = null;
-          var distToPlayer = getDistance(pos, r);
-          var obst = gMap.obstacles;
+          var pr = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
+                    x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};          
+          var playerVisible = isPlayerVisible(this.animation.x, this.animation.y);
 
-          var isPlayerVisible = false;
-/*
-          for (var i = 0; i < obst.length; i++) {
-            r1 = {x1: obst[i].x, y1: obst[i].y, x2: obst[i].x + obst[i].width, y2: obst[i].y + obst[i].height};
-            if (getDistance(pos, r1) < distToPlayer) {
-              // Player is not visible
-              isPlayerVisible = false;
-              break;
-            }
-          }*/
-
-
-          var dist = minDistance(r);//{up:WIDTH, down:WIDTH, left:WIDTH, right:WIDTH};
-
-          if(isPlayerVisible){
+          if(playerVisible){
             //Just follow to the player
             var a = Math.atan2(this.animation.y - player.animation.y, this.animation.x - player.animation.x) + Math.PI;
 
@@ -364,33 +449,51 @@
             var v = {x: 0, y: 0};
             v.x = this.speed * Math.cos(a); 
             v.y = this.speed * Math.sin(a);
-            var x0 = this.animation.x;
-            var y0 = this.animation.y;
             this.move(v.x, v.y);
           }else{
             var VH = HEIGHT * WIDTH;
             var v = {x: 0, y: 0};
             var m = 0;
-            var mk = "up";
-            for(var key in dist){
-              if (dist[key] > m){
-                m = dist[key];
-                mk = key;
-              } 
+            var mk = this.lastDirection;            
+            var r = {x: this.animation.x - this.hitRadius, y: this.animation.y - this.hitRadius, w: 2*this.hitRadius, h:2*this.hitRadius};
+            var dist = minDistance(r);
+            if(dist[mk] <= this.sightRadius){
+              //Если в предыдущем направлении уперлись в стенку, только тогда пытаемся идти в другую сторону
+              for(var key in dist){
+                if (dist[key] > m){
+                  m = dist[key];
+                  mk = key;
+                } 
+              }
             }
+            //Двигаемся не больше, чем на нужное расстояние, чтобы не дрожать
+            var d = this.sightRadius - dist[mk];
+            if(d < 0) d = this.speed;
+            var velocity = (d > this.speed)? this.speed : d;
+            //var velocity = this.speed;
             switch(mk){
-              case "up": v.y = -this.speed; break;
-              case "down": v.y = this.speed; break;
-              case "left": v.x = -this.speed; break;
-              case "right": v.x = this.speed; break;
+              case "up": v.y = -velocity;
+                         this.animation.rotation = 0;
+                         break;
+              case "down": v.y = velocity;
+                           this.animation.rotation = 180;
+                           break;
+              case "left": v.x = -velocity;
+                           this.animation.rotation = 270;
+                           break;
+              case "right": v.x = velocity;
+                            this.animation.rotation = 90;
+                            break;
             }
-            this.move(v.x, v.y);
-          }          
+            this.lastDirection = mk;
+            this.move(v.x, v.y);            
+          }
+          var dist1 = {up: 1, right: 1, down: 1, left:1};
+          var r = {x1: this.animation.x - this.hitRadius, y1: this.animation.y - this.hitRadius,
+               x2: this.animation.x + this.hitRadius, y2: this.animation.y + this.hitRadius};  
 
-          var pr = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
-                     x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};          
-          getDistance(r, pr, dist);
-          if(dist.up + dist.down + dist.left + dist.right < 4){//Касаемся игрока
+          getDistance(pr, r, dist1);
+          if(dist1.up + dist1.down + dist1.left + dist1.right < 4){//Касаемся игрока
             if(this.attackTicker <= 0){
               player.hit(this.damage);
               this.attackTicker = this.attackDelay;
@@ -751,7 +854,7 @@
             hitPoints[0].x = gMap.obstacles[closestObst].hitPoints[0].x;
             hitPoints[0].y = gMap.obstacles[closestObst].hitPoints[0].y;
             hitPoints[1].x = gMap.obstacles[closestObst].hitPoints[1].x;
-            hitPoints[1].y = gMap.obstacles[closestObst].hitPoints[1].y;        
+            hitPoints[1].y = gMap.obstacles[closestObst].hitPoints[1].y;
           }
           if(DEBUG){
             var g = new createjs.Shape();

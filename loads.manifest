@@ -21,6 +21,10 @@ images/city.png
 images/obstacle.png  
 images/shot.png 
 images/bonus.png 
+images/zombie_runner.png
+images/zombie_tank.png
+data/zombie_runner.json
+data/zombie_tank.json
 
 NETWORK:
 data/preLoads.json 

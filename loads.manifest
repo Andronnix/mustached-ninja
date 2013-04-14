@@ -1,7 +1,8 @@
 CACHE MANIFEST
-# Version 1.0
+# Version 1.0b
 
 CACHE:
+index.html
 sounds/pistol.mp3  
 sounds/uzi.mp3  
 sounds/rifle.mp3  
@@ -36,4 +37,3 @@ data/testMap6.json
 data/omgLargeMap.json  
 http://i.creativecommons.org/l/by-nc-sa/3.0/88x31.png
 lib/loadScreen.js
-index.html

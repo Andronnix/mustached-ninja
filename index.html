@@ -38,12 +38,14 @@
       var KEYCODE_Q = 81, KEYCODE_E = 69;
       var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
       var KEYCODE_P = 80, KEYCODE_ESC = 27;   
-      var KEYCODE_M = 77;   
+      var KEYCODE_M = 77;
+      var KEYCODE_PLUS = 107, KEYCODE_MINUS = 109;
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
       var DEBUG = false; 
       
+      var maxVolume = 0.8;
       var paused = false;
       var muted = false;
 
@@ -963,7 +965,7 @@
             for (var i = 0; i < preLoads.length; i++){ //loading all files from 'preLoads'
               resources[preLoads[i].name] = objQueue.getResult(preLoads[i].name);
             }
-            CLMenu(WIDTH/2.5, HEIGHT/1.5, WIDTH/4, 50, tempBar); // CompleteLoadMenu
+            CLMenu(WIDTH*0.375, HEIGHT/1.5, WIDTH/4, 50, tempBar); // CompleteLoadMenu
         });        
         xhrGet("data\\preLoads.json", 
                 this, 
@@ -997,7 +999,6 @@
         stage.addEventListener("stagemouseup", function(){
           shootHeld = false;
         });
-
         //startMenu();
       }
       
@@ -1019,6 +1020,9 @@
           case KEYCODE_P:  pause = new gamePause(); return false;
           case KEYCODE_Q: player.prevWeapon(); return false;
           case KEYCODE_E: player.nextWeapon(); return false;
+          
+          case KEYCODE_PLUS: volumeUp(); return false;
+          case KEYCODE_MINUS: volumeDown(); return false;
 
           case KEYCODE_1: player.changeWeapon(0); return false;
           case KEYCODE_2: player.changeWeapon(1); return false;
@@ -1121,6 +1125,8 @@
               stage.removeAllEventListeners("zombieKilled");
               stage.removeAllEventListeners("playerDied");
               stage.removeAllChildren();
+              volumeText.alpha = 0;
+              volumeText.isSeen = false;
               this.currMapData = null;
               this.obstacles = [];
               this.zombSpawners = [];

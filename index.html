@@ -40,8 +40,6 @@
       var KEYCODE_1 = 49, KEYCODE_2 = 50, KEYCODE_3 = 51;
       var KEYCODE_P = 80, KEYCODE_ESC = 27;   
       var KEYCODE_M = 77;   
-
-      var LOAD_PARTS = 25;
       
       var DEBUG_FIELD;
       var DEBUG_SHAPE; 
@@ -956,11 +954,9 @@
         var tempBar = new loadBar();
         tempBar.drawBackBar(WIDTH/4, HEIGHT/2, WIDTH/2, 20)
 
-        var currParts = 0;
-        objQueue.addEventListener("fileload", function(){
-        currParts++;
-        tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*currParts/LOAD_PARTS, 20, Math.floor(100*currParts/LOAD_PARTS));          
-         //console.log(currParts);
+        objQueue.addEventListener("progress", function(){
+        console.log(objQueue.progress);
+        tempBar.drawBar(WIDTH/4, HEIGHT/2, (WIDTH/2)*objQueue.progress, 20, Math.floor(100*objQueue.progress));          
         })
           
         //end loadScreen

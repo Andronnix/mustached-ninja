@@ -325,30 +325,15 @@
         this.hunt = function() {
           //return distance between point p and nearest corner of rect r
           function isPlayerVisible(dx, dy){
-            var r = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
-                    x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};
-            var pr = [{x: r.x1, y: r.y1},
-                      {x: r.x2, y: r.y1},
-                      {x: r.x2, y: r.y2},
-                      {x: r.x1, y: r.y2}
-                    ];
-            var obst = gMap.obstacles;this
-            var kA = 0, kB = 0, kC = 0;
-            var zCheck = new Vec2(0,0), shotVect = new Vec2(0,0);
-            var playerCornerDist = 9000;
-            var closestDistObst = 9000;
-            var hitPoints = [];
-            var shotPoints = [];
-            for(var i = 0; i<2; i++){
-              hitPoints[i] = {x:0, y:0};
-              shotPoints[i] = {x:0, y:0};
-            }
-            function getDist(s,z){
-              //var tempS = new Vec2(0,0);
-              var cosAng = s.dot(z)/((s.length()*z.length()));
-              if (cosAng < 0)return 9001;
-              var sinAng = Math.sqrt(1-cosAng*cosAng);
-              return sinAng*z.length();
+
+            function getDistSqr(s,z){  
+              var zx = z.x, zy = z.y, sx = s.x, sy = s.y;
+              var szDot = sx * zx + sy * zy;
+              if (szDot < 0)return 9001;
+              
+              var z2L = zx * zx + zy * zy;
+              var s2l = sx * sx + sy * sy;
+              return z2L - (szDot*szDot)/s2l;
             };
             
             function hitCheck(x, y, hitRadius){
@@ -357,80 +342,72 @@
               var y1 = y - hitRadius;
               var y2 = y + hitRadius;
               var i = 0;
-              var y;
-              var x;
               if (kB != 0){
                 y = ((kA*x1+kC)/(-kB));
                 if (y <= y2 && y >=y1){
-                  hitPoints[i].x = x1;
-                  hitPoints[i].y = y;
                   i++;
                 }
                 y = ((kA*x2+kC)/(-kB));
                 if (y <= y2 && y >=y1){
-                  hitPoints[i].x = x2;
-                  hitPoints[i].y = y;
                   i++;
                 }
               }else{
                 if (dx <= x2 && dx >= x1){
-                  for(i = 0; i<2; i++)hitPoints[i].x = dx
-                    hitPoints[0].y = y1;
-                    hitPoints[1].y = y2;
+                  return true;
                 }
               }
               if (kA != 0 && i < 2){
                 x = ((kB*y1+kC)/(-kA));
                 if (x <= x2 && x >=x1){
-                  hitPoints[i].x = x;
-                  hitPoints[i].y = y1;
                   i++;
                 }
                 if (i < 2){
                   x = ((kB*y2+kC)/(-kA));            
                   if (x <= x2 && x >=x1){
-                    hitPoints[i].x = x;
-                    hitPoints[i].y = y2;
                     i++;
                   }
                 }
               }else{
                 if (i == 0 && dx <= x2 && dx >= x1){
-                  for(i = 0; i<2; i++)hitPoints[i].y = dy
-                    hitPoints[0].x = x1;
-                    hitPoints[1].x = x2;
+                  return true;
                 }
               }
-              if (i == 2){
-                var v1 = new Vec2(hitPoints[0].x - dx, hitPoints[0].y - dy);
-                var v2 = new Vec2(hitPoints[1].x - dx, hitPoints[1].y - dy);
-                if (v1.length()>v2.length()){
-                  var temp = hitPoints[0];
-                  hitPoints[0] = hitPoints[1];
-                  hitPoints[1] = temp;
-                }
-                return true;
-              } else return false;
+              return (i===2);
             };
+
+            var r = {x1: player.animation.x - player.hitRadius, y1: player.animation.y - player.hitRadius,
+                    x2: player.animation.x + player.hitRadius, y2: player.animation.y + player.hitRadius};
+            var pr = [{x: r.x1, y: r.y1},
+                      {x: r.x2, y: r.y1},
+                      {x: r.x2, y: r.y2},
+                      {x: r.x1, y: r.y2}
+                    ];
+            var obst = gMap.obstacles;
+            var obstL = obst.length;
+            var kA = 0, kB = 0, kC = 0, zCl = 0;
+            var zCheck = {x:0, y:0}, shotVect = {x:0, y:0};
+            var playerCornerDist = 9000;
 
             for(var i = 0; i < pr.length; i++) {//если хотя бы один из углов виден, то вернем true
               kA = dy - pr[i].y;
               kB = pr[i].x - dx;
               kC = dx * pr[i].y - pr[i].x * dy;      
-              shotVect = new Vec2(kB, -kA);
-              playerCornerDist = Math.sqrt((pr[i].x - dx)*(pr[i].x - dx) + (pr[i].y - dy)*(pr[i].y - dy));
+              shotVect = {x:kB, y: -kA};
+              playerCornerDist = kA*kA + kB*kB;
               //стены стены!
-              for (var j = 0; j < obst.length; j++){
-                zCheck.x = obst[j].x - dx + obst[j].width/2;
-                zCheck.y = obst[j].y - dy + obst[j].height/2;
-                if (getDist(shotVect, zCheck)<20 && hitCheck(obst[j].x + obst[j].width/2, obst[j].y + obst[j].height/2, 22)) //ааа говнокод, нужна переменная!!!
+              for (var j = 0; j < obstL; j++){
+                var oxw = obst[j].x + obst[j].width/2, oyh = obst[j].y + obst[j].height/2
+                zCheck.x = oxw - dx;
+                zCheck.y = oyh - dy;
+                if (getDistSqr(shotVect, zCheck) < 576 && hitCheck(oxw, oyh, 24)) //ааа говнокод, нужна переменная!!!
                 {
-                  if (zCheck.length() < closestDistObst){
-                    closestDistObst = zCheck.length();
+                  zCl = zCheck.x * zCheck.x + zCheck.y * zCheck.y;
+                  if (zCl <= playerCornerDist){
+                    break;
                   }
                 }
               }
-              if (closestDistObst > playerCornerDist){
+              if (zCl > playerCornerDist){
                 return true;
               }
             }

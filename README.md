@@ -15,9 +15,12 @@ WASD to move
 Q - previous weapon
 E - next weapon
 
+Num +/- - volume control
 M - mute
 Esc, P - pause
 Autors:
+
+upd.: added volume controls, 2 more zombies ( tank and the sporty one:) ), AI for zombies
 
 Code: Andrey Kokorev, Paul Chursin 
 Background music: Paul Chursin 

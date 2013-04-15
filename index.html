@@ -1004,12 +1004,14 @@
             if(this.type == "medkit"){
               //Нанесем отрицательный урон, то же, что и вылечить
               player.hit(- this.value);
+              createjs.Sound.play("medikit");
             }
             if(this.type == "ammo"){
               //50 патронов для автомата и 10 для снайперки, пистолет с бесконечными
               player.weapons[1].ammo += 50;
               player.weapons[2].ammo += 10;
               var t = TextAnimation(player, "Ammo", "#0e0");
+              createjs.Sound.play("rifleRecharge");
             }   
             //Удаляем себя, бонус использован
             stage.removeChild(this.animation);

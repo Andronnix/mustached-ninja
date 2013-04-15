@@ -114,5 +114,9 @@
   {
     "name" : "zBite",
     "src" : "sounds\\bite.mp3"
-  }  
+  },
+  {
+    "name" : "medikit",
+    "src" : "sounds\\medkit.mp3"
+  }    
 ]

@@ -1,6 +1,8 @@
 <!DOCTYPE html>
-<HTML lang="en" manifest="loads.manifest">
+<HTML lang="en">
   <HEAD>
+    <meta http-equiv="Expires" content="Mon, 26 Jul 1997 05:00:00 GMT" />
+    <meta http-equiv="Pragma" content="no-cache" />
     <style type="text/css">
       #gameCanvas {
         border: 1px solid black;
@@ -72,6 +74,7 @@
         async = async || true;
         var xhr = new XMLHttpRequest();
         xhr.open("GET", reqUri, async);
+        xhr.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
         xhr.onreadystatechange = function(){
           if(xhr.readyState == 4){
             callback.call(context, xhr);
@@ -1092,7 +1095,7 @@
       //Загрузка всех ресурсов, и запуск функции init()
       function load(){
         var preLoads;
-
+        
         var objQueue = new createjs.LoadQueue();
         objQueue.installPlugin(createjs.Sound);
         //loadScreen add
